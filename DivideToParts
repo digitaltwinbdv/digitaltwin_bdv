@@ -1,0 +1,132 @@
+import clr
+import Autodesk
+from Autodesk.Revit.DB import *
+clr.AddReference('RevitAPI')
+from Autodesk.Revit.Exceptions import InvalidOperationException
+from Autodesk.Revit.UI import TaskDialog
+from Autodesk.Revit.ApplicationServices import Application
+clr.AddReference('RevitServices')
+import RevitServices
+clr.AddReference('ProtoGeometry')
+from Autodesk.DesignScript.Geometry import *
+# Import ToDSType(bool) extension method
+clr.AddReference("RevitNodes")
+import Revit
+clr.ImportExtensions(Revit.Elements)
+# Import geometry conversion extension methods
+clr.ImportExtensions(Revit.GeometryConversion)
+# Import DocumentManager and TransactionManager
+from RevitServices.Persistence import DocumentManager
+from RevitServices.Transactions import TransactionManager
+from System.Collections.Generic import *
+
+
+
+#Создание списка для элементов, которые не подлежат разбиению на части из-за некорректности моделирования.
+list_of_invalids = []
+#Получение текущего документа Revit.
+doc = __revit__.ActiveUIDocument.Document
+
+
+
+#Получение списка элементов заданных категорий для дальнейшего определения их многослойности и разбиения на части.
+list_of_elements = []
+#Создаем список необходимых категорий.
+categories_to_collect = [
+    BuiltInCategory.OST_Floors,                   #Категория: Полы
+    BuiltInCategory.OST_Walls,                    #Категория: Стены
+    BuiltInCategory.OST_Roofs,                    #Категория: Крыши
+    BuiltInCategory.OST_Ceilings                  #Категория: Потолки
+]
+#Для каждой категории в списке categories_to_collect:
+for category in categories_to_collect:
+    #Получаем все элементы указанной категории, исключая типы элементов.
+    elements = FilteredElementCollector(doc).OfCategory(category).WhereElementIsNotElementType().ToElements()
+    #Для каждого элемента в текущей категории.
+    for element in elements:
+        #Добавляем элемент в список list_of_elements.
+        list_of_elements.append(element)
+
+
+
+#Список многослойных элементов, которые необходимо разбить на части.
+list_for_creating_parts = []
+#Получение списка многослойных элементов по признаку количества материала у них.
+for element in list_of_elements:
+    #Получаем список id материалов у элемента.
+    materials_of_element = element.GetMaterialIds(False)
+    #Если длина списка больше 1, то данный факт говорит о том, что элемент многослойный.
+    if len(materials_of_element) > 1:
+        #Проверяем есть ли у элемента уже имеющиеся части (возможно он уже разбит на части).
+        if not PartUtils.HasAssociatedParts(doc, element.Id):
+            #Проверяем корректно ли замоделирован элемент, подлежит ли разбиению на части.
+            if PartUtils.AreElementsValidForCreateParts(doc, List[ElementId]([element.Id])):
+                #Если все вышеописанные условия выполнились, добавляем id элемента в список list_for_creating_parts.
+                list_for_creating_parts.append(element.Id)
+            #Если элемент не подлежит разбиению, некорректно замоделирован, то добавляем в список list_of_invalids для ручного устранения ошибки моделирования.
+            else:
+                list_of_invalids.append(element.Id)
+
+
+
+#Начинаем транзакцию "Разбиение многослойного элемента на части".
+with Transaction(doc, 'Разбиение многослойного элемента на части') as t:
+    #Начинаем транзакцию.
+    t.Start()
+    #Создаем части для элементов, используя идентификаторы элементов из списка list_for_creating_parts.
+    PartUtils.CreateParts(doc, List[ElementId](list_for_creating_parts))
+    #Вызываем пересчет документа.
+    doc.Regenerate()
+    #Завершаем транзакцию.
+    t.Commit()
+
+
+
+#Начинаем транзакцию 'Запись UID типоразмера родителя в параметр "NM_Elem_TypeUID" части'.
+with Transaction(doc, 'Запись UID типоразмера родителя в параметр "NM_Elem_TypeUID" части, Запись UID материала в параметр "NM_Elem_MaterialTypeUID" части') as t:
+    t.Start()
+    #Получаем все элементы категории "Части".
+    parts = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Parts).WhereElementIsNotElementType().ToElements()
+    #Проходим по каждой части в списке parts.
+    for part in parts:
+        #Проходим по каждому идентификатору родительского элемента данной части.
+        for source_id in part.GetSourceElementIds():
+            #Получаем объект родительского элемента по его идентификатору.
+            parent_element = doc.GetElement(source_id.HostElementId)
+            #Если родительский элемент принадлежит категории "Части".
+            if parent_element.Category.Name == "Части":
+                #Пока родительский элемент является частью, мы продолжаем запрашивать его родителя.
+                while parent_element.Category.Name == "Части":
+                    #Получаем новый идентификатор родительского элемента (родителя текущего элемента).
+                    new_parent_id = parent_element.GetSourceElementIds()
+                    #Проходим по каждому новому идентификатору родительского элемента.
+                    for source_id_parent in new_parent_id:
+                        #Получаем объект родительского элемента по его идентификатору.
+                        parent_element = doc.GetElement(source_id_parent.HostElementId)
+            #Если категория родителя НЕ "Части":
+            else:
+                #Получаем идентификатор типа родительского элемента.
+                parent_type_id = parent_element.GetTypeId()
+                #Получаем uid родительского элемента по его типу.
+                parent_uid = doc.GetElement(parent_type_id).UniqueId
+                #Получаем параметр NM_Elem_TypeUID для текущей части.
+                param_type_uid = part.LookupParameter("NM_Elem_TypeUID")
+                #Устанавливаем uid родительского элемента в параметр NM_Elem_TypeUID для текущей части.
+                param_type_uid.Set(parent_uid)
+        #Получаем список идентификаторов материалов, используемых в части. Поскольку возвращается тип данных IList, запускаем цикл.
+        id_materials_of_part = part.GetMaterialIds(False)
+        for id_material_of_part in id_materials_of_part:
+            #Получаем объект материала по его идентификатору.
+            material_of_part = doc.GetElement(id_material_of_part)
+            #Получаем уникальный идентификатор материала.
+            uid_material = material_of_part.UniqueId
+            #Получаем параметр "NM_Elem_MaterialTypeUID" части.
+            param_material_type_uid = part.LookupParameter("NM_Elem_MaterialTypeUID")
+            #Записываем значение уникального идентификатора материала в параметр "NM_Elem_MaterialTypeUID" части.
+            part.LookupParameter("NM_Elem_MaterialTypeUID").Set(uid_material)
+                #Фиксируем изменения в транзакции.
+    t.Commit()
+
+# OUT = list_of_invalids
+
+
