@@ -1,0 +1,861 @@
+import clr
+clr.AddReference('RevitAPI')
+from Autodesk.Revit.DB import *
+clr.AddReference('RevitServices')
+import RevitServices
+from RevitServices.Persistence import DocumentManager
+from RevitServices.Transactions import TransactionManager
+
+
+
+doc = DocumentManager.Instance.CurrentDBDocument
+TransactionManager.Instance.EnsureInTransaction(doc)
+units = doc.GetUnits()
+
+
+
+"Раздел 'Общие'"
+#Длина(Общие)
+length_unit_type = UnitType.UT_Length
+length_format_options = units.GetFormatOptions(length_unit_type)
+length_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(length_unit_type, length_format_options)
+doc.SetUnits(units)
+
+#Площадь(Общие)
+Area_unit_type = UnitType.UT_Area
+Area_format_options = units.GetFormatOptions(Area_unit_type)
+Area_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Area_unit_type, Area_format_options)
+doc.SetUnits(units)
+
+#Объем(Общие)
+Volume_unit_type = UnitType.UT_Volume
+Volume_format_options = units.GetFormatOptions(Volume_unit_type)
+Volume_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Volume_unit_type, Volume_format_options)
+doc.SetUnits(units)
+
+#Угол(Общие)
+Angle_unit_type = UnitType.UT_Angle
+Angle_format_options = units.GetFormatOptions(Angle_unit_type)
+Angle_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Angle_unit_type, Angle_format_options)
+
+#Уклон(Общие)
+UT_Slope_unit_type = UnitType.UT_Slope
+UT_Slope_format_options = units.GetFormatOptions(UT_Slope_unit_type)
+UT_Slope_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Slope_unit_type, UT_Slope_format_options)
+
+#Массовая плотность(Общие)
+UT_MassDensity_unit_type = UnitType.UT_MassDensity
+UT_MassDensity_format_options = units.GetFormatOptions(UT_MassDensity_unit_type)
+UT_MassDensity_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_MassDensity_unit_type, UT_MassDensity_format_options)
+
+#Денежная единица(Общие)
+Currency_unit_type = UnitType.UT_Currency
+Currency_format_options = units.GetFormatOptions(Currency_unit_type)
+Currency_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Currency_unit_type, Currency_format_options)
+doc.SetUnits(units)
+
+#Время(Общие)
+TimeInterval_unit_type = UnitType.UT_TimeInterval
+TimeInterval_format_options = units.GetFormatOptions(TimeInterval_unit_type)
+TimeInterval_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(TimeInterval_unit_type, TimeInterval_format_options)
+doc.SetUnits(units)
+
+#Скорость(Общие)
+Speed_unit_type = UnitType.UT_Speed
+Speed_format_options = units.GetFormatOptions(Speed_unit_type)
+Speed_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Speed_unit_type, Speed_format_options)
+
+
+
+"Раздел 'Несущие конструкции'"
+#Усилие(Несущие конструкции)
+Force_unit_type = UnitType.UT_Force
+Force_format_options = units.GetFormatOptions(Force_unit_type)
+Force_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Force_unit_type, Force_format_options)
+doc.SetUnits(units)
+
+#Распределенная нагрузка по линии(Несущие конструкции)
+LinearForce_unit_type = UnitType.UT_LinearForce
+LinearForce_format_options = units.GetFormatOptions(LinearForce_unit_type)
+LinearForce_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(LinearForce_unit_type, LinearForce_format_options)
+doc.SetUnits(units)
+
+#Распределеннвя нагрузка(Несущие конструкции)
+AreaForce_unit_type = UnitType.UT_AreaForce
+AreaForce_format_options = units.GetFormatOptions(AreaForce_unit_type)
+AreaForce_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(AreaForce_unit_type, AreaForce_format_options)
+doc.SetUnits(units)
+
+#Момент(Несущие конструкции)
+Moment_unit_type = UnitType.UT_Moment
+Moment_format_options = units.GetFormatOptions(Moment_unit_type)
+Moment_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Moment_unit_type, Moment_format_options)
+doc.SetUnits(units)
+
+#Линейный момент(Несущие конструкции)
+UT_LinearMoment_type = UnitType.UT_LinearMoment
+UT_LinearMoment_options = units.GetFormatOptions(UT_LinearMoment_type)
+UT_LinearMoment_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_LinearMoment_type, UT_LinearMoment_options)
+doc.SetUnits(units)
+
+#Напряжение(Несущие конструкции)
+Stress_unit_type = UnitType.UT_Stress
+Stress_format_options = units.GetFormatOptions(Stress_unit_type)
+Stress_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Stress_unit_type, Stress_format_options)
+doc.SetUnits(units)
+
+#Удельный вес(Несущие конструкции)
+UT_UnitWeight_unit_type = UnitType.UT_UnitWeight
+UT_UnitWeight_format_options = units.GetFormatOptions(UT_UnitWeight_unit_type)
+UT_UnitWeight_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_UnitWeight_unit_type, UT_UnitWeight_format_options)
+doc.SetUnits(units)
+
+#Удельный вес(Несущие конструкции)
+UT_Weight_unit_type = UnitType.UT_Weight
+UT_Weight_format_options = units.GetFormatOptions(UT_Weight_unit_type)
+UT_Weight_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Weight_unit_type, UT_Weight_format_options)
+doc.SetUnits(units)
+
+#Масса(Несущие конструкции)
+UT_Mass_unit_type = UnitType.UT_Mass
+UT_Mass_format_options = units.GetFormatOptions(UT_Mass_unit_type)
+UT_Mass_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Mass_unit_type, UT_Mass_format_options)
+doc.SetUnits(units)
+
+#Масса на единицу площади(Несущие конструкции)
+UT_MassPerUnitArea_unit_type = UnitType.UT_MassPerUnitArea
+UT_MassPerUnitArea_format_options = units.GetFormatOptions(UT_MassPerUnitArea_unit_type)
+UT_MassPerUnitArea_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_MassPerUnitArea_unit_type, UT_MassPerUnitArea_format_options)
+doc.SetUnits(units)
+
+#Коэффициент теплового расширения(Несущие конструкции)
+ThermalExpansion_unit_type = UnitType.UT_ThermalExpansion
+ThermalExpansion_format_options = units.GetFormatOptions(ThermalExpansion_unit_type)
+ThermalExpansion_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(ThermalExpansion_unit_type, ThermalExpansion_format_options)
+doc.SetUnits(units)
+
+#Сосредоточенный коэффициент упругости(Несущие конструкции)
+UT_ForcePerLength_unit_type = UnitType.UT_ForcePerLength
+UT_ForcePerLength_format_options = units.GetFormatOptions(UT_ForcePerLength_unit_type)
+UT_ForcePerLength_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_ForcePerLength_unit_type, UT_ForcePerLength_format_options)
+doc.SetUnits(units)
+
+#Сосредоточенный угловой коэффициент упругости(Несущие конструкции)
+UT_ForceLengthPerAngle_unit_type = UnitType.UT_ForceLengthPerAngle
+UT_ForceLengthPerAngle_format_options = units.GetFormatOptions(UT_ForceLengthPerAngle_unit_type)
+UT_ForceLengthPerAngle_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_ForceLengthPerAngle_unit_type, UT_ForceLengthPerAngle_format_options)
+doc.SetUnits(units)
+
+#Линейный коэффициент упругости(Несущие конструкции)
+UT_LinearForcePerLength_unit_type = UnitType.UT_LinearForcePerLength
+UT_LinearForcePerLength_format_options = units.GetFormatOptions(UT_LinearForcePerLength_unit_type)
+UT_LinearForcePerLength_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_LinearForcePerLength_unit_type, UT_LinearForcePerLength_format_options)
+doc.SetUnits(units)
+
+#Коэффициент упругости среды(Несущие конструкции)
+UT_AreaForcePerLength_unit_type = UnitType.UT_AreaForcePerLength
+UT_AreaForcePerLength_format_options = units.GetFormatOptions(UT_AreaForcePerLength_unit_type)
+UT_AreaForcePerLength_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_AreaForcePerLength_unit_type, UT_AreaForcePerLength_format_options)
+doc.SetUnits(units)
+
+#Линейный угловой коэффициент(Несущие конструкции)
+UT_LinearForceLengthPerAngle_unit_type = UnitType.UT_LinearForceLengthPerAngle
+UT_LinearForceLengthPerAngle_format_options = units.GetFormatOptions(UT_LinearForceLengthPerAngle_unit_type)
+UT_LinearForceLengthPerAngle_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_LinearForceLengthPerAngle_unit_type, UT_LinearForceLengthPerAngle_format_options)
+doc.SetUnits(units)
+
+#Смещение/Прогиб(Несущие конструкции)
+UT_Displacement_Deflection_unit_type = UnitType.UT_Displacement_Deflection
+UT_Displacement_Deflection_format_options = units.GetFormatOptions(UT_Displacement_Deflection_unit_type)
+UT_Displacement_Deflection_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Displacement_Deflection_unit_type, UT_Displacement_Deflection_format_options)
+doc.SetUnits(units)
+
+#Вращение(Несущие конструкции)
+UT_Rotation_unit_type = UnitType.UT_Rotation
+UT_Rotation_format_options = units.GetFormatOptions(UT_Rotation_unit_type)
+UT_Rotation_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Rotation_unit_type, UT_Rotation_format_options)
+doc.SetUnits(units)
+
+#Период(Несущие конструкции)
+UT_Period_unit_type = UnitType.UT_Period
+UT_Period_format_options = units.GetFormatOptions(UT_Period_unit_type)
+UT_Period_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Period_unit_type, UT_Period_format_options)
+doc.SetUnits(units)
+
+#Частота(Несущие конструкции)
+UT_Structural_Frequency_unit_type = UnitType.UT_Structural_Frequency
+UT_Structural_Frequency_format_options = units.GetFormatOptions(UT_Structural_Frequency_unit_type)
+UT_Structural_Frequency_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Structural_Frequency_unit_type, UT_Structural_Frequency_format_options)
+doc.SetUnits(units)
+
+#Пульсация(Несущие конструкции)
+UT_Pulsation_unit_type = UnitType.UT_Pulsation
+UT_Pulsation_format_options = units.GetFormatOptions(UT_Pulsation_unit_type)
+UT_Pulsation_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Pulsation_unit_type, UT_Pulsation_format_options)
+doc.SetUnits(units)
+
+#Скорость(Несущие конструкции)
+UT_Structural_Velocity_unit_type = UnitType.UT_Structural_Velocity
+UT_Structural_Velocity_format_options = units.GetFormatOptions(UT_Structural_Velocity_unit_type)
+UT_Structural_Velocity_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Structural_Velocity_unit_type, UT_Structural_Velocity_format_options)
+doc.SetUnits(units)
+
+#Ускорение(Несущие конструкции)
+UT_Acceleration_unit_type = UnitType.UT_Acceleration
+UT_Acceleration_format_options = units.GetFormatOptions(UT_Acceleration_unit_type)
+UT_Acceleration_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Acceleration_unit_type, UT_Acceleration_format_options)
+doc.SetUnits(units)
+
+#Энергия(Несущие конструкции)
+UT_Energy_unit_type = UnitType.UT_Energy
+UT_Energy_format_options = units.GetFormatOptions(UT_Energy_unit_type)
+UT_Energy_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Energy_unit_type, UT_Energy_format_options)
+
+#Объем арматуры(Несущие конструкции)
+UT_Reinforcement_Volume_unit_type = UnitType.UT_Reinforcement_Volume
+UT_Reinforcement_Volume_format_options = units.GetFormatOptions(UT_Reinforcement_Volume_unit_type)
+UT_Reinforcement_Volume_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Reinforcement_Volume_unit_type, UT_Reinforcement_Volume_format_options)
+doc.SetUnits(units)
+
+#Длина армирования(Несущие конструкции)
+UT_Reinforcement_Length_unit_type = UnitType.UT_Reinforcement_Length
+UT_Reinforcement_Length_format_options = units.GetFormatOptions(UT_Reinforcement_Length_unit_type)
+UT_Reinforcement_Length_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Reinforcement_Length_unit_type, UT_Reinforcement_Length_format_options)
+doc.SetUnits(units)
+
+#Армирование по площади(Несущие конструкции)
+UT_Reinforcement_Area_unit_type = UnitType.UT_Reinforcement_Area
+UT_Reinforcement_Area_format_options = units.GetFormatOptions(UT_Reinforcement_Area_unit_type)
+UT_Reinforcement_Area_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Reinforcement_Area_unit_type, UT_Reinforcement_Area_format_options)
+doc.SetUnits(units)
+
+#Армирование по площади на единицу длины(Несущие конструкции)
+UT_Reinforcement_Area_per_Unit_Length_unit_type = UnitType.UT_Reinforcement_Area_per_Unit_Length
+UT_Reinforcement_Area_per_Unit_Length_format_options = units.GetFormatOptions(UT_Reinforcement_Area_per_Unit_Length_unit_type)
+UT_Reinforcement_Area_per_Unit_Length_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Reinforcement_Area_per_Unit_Length_unit_type, UT_Reinforcement_Area_per_Unit_Length_format_options)
+doc.SetUnits(units)
+
+#Интервал армирования(Несущие конструкции)
+UT_Reinforcement_Spacing_unit_type = UnitType.UT_Reinforcement_Spacing
+UT_Reinforcement_Spacing_format_options = units.GetFormatOptions(UT_Reinforcement_Spacing_unit_type)
+UT_Reinforcement_Spacing_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Reinforcement_Spacing_unit_type, UT_Reinforcement_Spacing_format_options)
+doc.SetUnits(units)
+
+#Защитный слой армирования(Несущие конструкции)
+UT_Reinforcement_Cover_unit_type = UnitType.UT_Reinforcement_Cover
+UT_Reinforcement_Cover_format_options = units.GetFormatOptions(UT_Reinforcement_Cover_unit_type)
+UT_Reinforcement_Cover_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Reinforcement_Cover_unit_type, UT_Reinforcement_Cover_format_options)
+doc.SetUnits(units)
+
+#Диаметр стержня(Несущие конструкции)
+Bar_Diameter_unit_type = UnitType.UT_Bar_Diameter
+Bar_Diameter_format_options = units.GetFormatOptions(Bar_Diameter_unit_type)
+Bar_Diameter_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Bar_Diameter_unit_type, Bar_Diameter_format_options)
+doc.SetUnits(units)
+
+#Ширина трещины(Несущие конструкции)
+UT_Crack_Width_unit_type = UnitType.UT_Crack_Width
+UT_Crack_Width_format_options = units.GetFormatOptions(UT_Crack_Width_unit_type)
+UT_Crack_Width_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Crack_Width_unit_type, UT_Crack_Width_format_options)
+doc.SetUnits(units)
+
+#Размеры сечения(Несущие конструкции)
+UT_Section_Dimension_unit_type = UnitType.UT_Section_Dimension
+UT_Section_Dimension_format_options = units.GetFormatOptions(UT_Section_Dimension_unit_type)
+UT_Section_Dimension_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Section_Dimension_unit_type, UT_Section_Dimension_format_options)
+doc.SetUnits(units)
+
+#Свойство сечения(Несущие конструкции)
+UT_Section_Property_unit_type = UnitType.UT_Section_Property
+UT_Section_Property_format_options = units.GetFormatOptions(UT_Section_Property_unit_type)
+UT_Section_Property_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Section_Property_unit_type, UT_Section_Property_format_options)
+doc.SetUnits(units)
+
+#Площадь сечения(Несущие конструкции)
+UT_Section_Area_unit_type = UnitType.UT_Section_Area
+UT_Section_Area_format_options = units.GetFormatOptions(UT_Section_Area_unit_type)
+UT_Section_Area_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Section_Area_unit_type, UT_Section_Area_format_options)
+doc.SetUnits(units)
+
+#Момент сопротивления сечения(Несущие конструкции)
+UT_Section_Modulus_unit_type = UnitType.UT_Section_Modulus
+UT_Section_Modulus_format_options = units.GetFormatOptions(UT_Section_Modulus_unit_type)
+UT_Section_Modulus_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Section_Modulus_unit_type, UT_Section_Modulus_format_options)
+doc.SetUnits(units)
+
+#Момент инерции(Несущие конструкции)
+UT_Moment_of_Inertia_unit_type = UnitType.UT_Moment_of_Inertia
+UT_Moment_of_Inertia_format_options = units.GetFormatOptions(UT_Moment_of_Inertia_unit_type)
+UT_Moment_of_Inertia_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Moment_of_Inertia_unit_type, UT_Moment_of_Inertia_format_options)
+doc.SetUnits(units)
+
+#Постоянная перекоса(Несущие конструкции)
+UT_Warping_Constant_unit_type = UnitType.UT_Warping_Constant
+UT_Warping_Constant_format_options = units.GetFormatOptions(UT_Warping_Constant_unit_type)
+UT_Warping_Constant_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Warping_Constant_unit_type, UT_Warping_Constant_format_options)
+doc.SetUnits(units)
+
+#Масса на единицу длины(Несущие конструкции)
+UT_Mass_per_Unit_Length_unit_type = UnitType.UT_Mass_per_Unit_Length
+UT_Mass_per_Unit_Length_format_options = units.GetFormatOptions(UT_Mass_per_Unit_Length_unit_type)
+UT_Mass_per_Unit_Length_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Mass_per_Unit_Length_unit_type, UT_Mass_per_Unit_Length_format_options)
+doc.SetUnits(units)
+
+#Вес на единицу длины(Несущие конструкции)
+UT_Weight_per_Unit_Length_unit_type = UnitType.UT_Weight_per_Unit_Length
+UT_Weight_per_Unit_Length_format_options = units.GetFormatOptions(UT_Weight_per_Unit_Length_unit_type)
+UT_Weight_per_Unit_Length_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Weight_per_Unit_Length_unit_type, UT_Weight_per_Unit_Length_format_options)
+doc.SetUnits(units)
+
+#Площадь поверхности на единицу длины(Несущие конструкции)
+UT_Surface_Area_unit_type = UnitType.UT_Surface_Area
+UT_Surface_Area_format_options = units.GetFormatOptions(UT_Surface_Area_unit_type)
+UT_Surface_Area_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Surface_Area_unit_type, UT_Surface_Area_format_options)
+doc.SetUnits(units)
+
+
+
+"Раздел 'ОВК'"
+#Плотность(ОВК)
+HVAC_Density_unit_type = UnitType.UT_HVAC_Density
+HVAC_Density_format_options = units.GetFormatOptions(HVAC_Density_unit_type)
+HVAC_Density_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Density_unit_type, HVAC_Density_format_options)
+doc.SetUnits(units)
+
+#Трение(ОВК)
+HVAC_Friction_unit_type = UnitType.UT_HVAC_Friction
+HVAC_Friction_format_options = units.GetFormatOptions(HVAC_Friction_unit_type)
+HVAC_Friction_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Friction_unit_type, HVAC_Friction_format_options)
+doc.SetUnits(units)
+
+#Мощность(ОВК)
+HVAC_Power_unit_type = UnitType.UT_HVAC_Power
+HVAC_Power_format_options = units.GetFormatOptions(HVAC_Power_unit_type)
+HVAC_Power_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Power_unit_type, HVAC_Power_format_options)
+doc.SetUnits(units)
+
+#Удельная мощность(ОВК)
+HVAC_Power_Density_unit_type = UnitType.UT_HVAC_Power_Density
+HVAC_Power_Density_format_options = units.GetFormatOptions(HVAC_Power_Density_unit_type)
+HVAC_Power_Density_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Power_Density_unit_type, HVAC_Power_Density_format_options)
+doc.SetUnits(units)
+
+#Давление(ОВК)
+UT_HVAC_Pressure_unit_type = UnitType.UT_HVAC_Pressure
+UT_HVAC_Pressure_format_options = units.GetFormatOptions(UT_HVAC_Pressure_unit_type)
+UT_HVAC_Pressure_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_Pressure_unit_type, UT_HVAC_Pressure_format_options)
+doc.SetUnits(units)
+
+#Температура(ОВК)
+HVAC_Temperature_unit_type = UnitType.UT_HVAC_Temperature
+HVAC_Temperature_format_options = units.GetFormatOptions(HVAC_Temperature_unit_type)
+HVAC_Temperature_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Temperature_unit_type, HVAC_Temperature_format_options)
+doc.SetUnits(units)
+
+#Скорость(ОВК)
+HVAC_Velocity_unit_type = UnitType.UT_HVAC_Velocity
+HVAC_Velocity_format_options = units.GetFormatOptions(HVAC_Velocity_unit_type)
+HVAC_Velocity_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Velocity_unit_type, HVAC_Velocity_format_options)
+doc.SetUnits(units)
+
+#Воздушный поток(ОВК)
+HVAC_Airflow_unit_type = UnitType.UT_HVAC_Airflow
+HVAC_Airflow_format_options = units.GetFormatOptions(HVAC_Airflow_unit_type)
+HVAC_Airflow_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Airflow_unit_type, HVAC_Airflow_format_options)
+doc.SetUnits(units)
+
+#Размер воздуховода(ОВК)
+HVAC_DuctSize_unit_type = UnitType.UT_HVAC_DuctSize
+HVAC_DuctSize_format_options = units.GetFormatOptions(HVAC_DuctSize_unit_type)
+HVAC_DuctSize_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_DuctSize_unit_type, HVAC_DuctSize_format_options)
+doc.SetUnits(units)
+
+#Поперечный разрез(ОВК)
+HVAC_CrossSection_unit_type = UnitType.UT_HVAC_CrossSection
+HVAC_CrossSection_format_options = units.GetFormatOptions(HVAC_CrossSection_unit_type)
+HVAC_CrossSection_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_CrossSection_unit_type, HVAC_CrossSection_format_options)
+doc.SetUnits(units)
+
+#Теплоприток(ОВК)
+HVAC_HeatGain_unit_type = UnitType.UT_HVAC_HeatGain
+HVAC_HeatGain_format_options = units.GetFormatOptions(HVAC_HeatGain_unit_type)
+HVAC_HeatGain_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_HeatGain_unit_type, HVAC_HeatGain_format_options)
+doc.SetUnits(units)
+
+#Шероховатость(ОВК)
+HVAC_Roughness_unit_type = UnitType.UT_HVAC_Roughness
+HVAC_Roughness_format_options = units.GetFormatOptions(HVAC_Roughness_unit_type)
+HVAC_Roughness_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Roughness_unit_type, HVAC_Roughness_format_options)
+doc.SetUnits(units)
+
+#Динамическая вязкость(ОВК)
+UT_HVAC_Viscosity_unit_type = UnitType.UT_HVAC_Viscosity
+UT_HVAC_Viscosity_format_options = units.GetFormatOptions(UT_HVAC_Viscosity_unit_type)
+UT_HVAC_Viscosity_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_Viscosity_unit_type, UT_HVAC_Viscosity_format_options)
+doc.SetUnits(units)
+
+#Плотность воздушного потока(ОВК)
+HVAC_Airflow_Density_unit_type = UnitType.UT_HVAC_Airflow_Density
+HVAC_Airflow_Density_format_options = units.GetFormatOptions(HVAC_Airflow_Density_unit_type)
+HVAC_Airflow_Density_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Airflow_Density_unit_type, HVAC_Airflow_Density_format_options)
+doc.SetUnits(units)
+
+#Холодильная нагрузка(ОВК)
+HVAC_Cooling_Load_unit_type = UnitType.UT_HVAC_Cooling_Load
+HVAC_Cooling_Load_format_options = units.GetFormatOptions(HVAC_Cooling_Load_unit_type)
+HVAC_Cooling_Load_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Cooling_Load_unit_type, HVAC_Cooling_Load_format_options)
+doc.SetUnits(units)
+
+#Отопительная нагрузка(ОВК)
+HVAC_Heating_Load_unit_type = UnitType.UT_HVAC_Heating_Load
+HVAC_Heating_Load_format_options = units.GetFormatOptions(HVAC_Heating_Load_unit_type)
+HVAC_Heating_Load_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Heating_Load_unit_type, HVAC_Heating_Load_format_options)
+doc.SetUnits(units)
+
+#Холодильная нагрузка на единицу площади(ОВК)
+HVAC_Cooling_Load_Divided_By_Area_unit_type = UnitType.UT_HVAC_Cooling_Load_Divided_By_Area
+HVAC_Cooling_Load_Divided_By_Area_format_options = units.GetFormatOptions(HVAC_Cooling_Load_Divided_By_Area_unit_type)
+HVAC_Cooling_Load_Divided_By_Area_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Cooling_Load_Divided_By_Area_unit_type, HVAC_Cooling_Load_Divided_By_Area_format_options)
+doc.SetUnits(units)
+
+#Отопительная нагрузка на единицу площади(ОВК)
+UT_HVAC_Heating_Load_Divided_By_Area_unit_type = UnitType.UT_HVAC_Heating_Load_Divided_By_Area
+UT_HVAC_Heating_Load_Divided_By_Area_format_options = units.GetFormatOptions(UT_HVAC_Heating_Load_Divided_By_Area_unit_type)
+UT_HVAC_Heating_Load_Divided_By_Area_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_Heating_Load_Divided_By_Area_unit_type, UT_HVAC_Heating_Load_Divided_By_Area_format_options)
+doc.SetUnits(units)
+
+#Холодильная нагрузка на единицу объема(ОВК)
+UT_HVAC_Cooling_Load_Divided_By_Volume_unit_type = UnitType.UT_HVAC_Cooling_Load_Divided_By_Volume
+UT_HVAC_Cooling_Load_Divided_By_Volume_format_options = units.GetFormatOptions(UT_HVAC_Cooling_Load_Divided_By_Volume_unit_type)
+UT_HVAC_Cooling_Load_Divided_By_Volume_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_Cooling_Load_Divided_By_Volume_unit_type, UT_HVAC_Cooling_Load_Divided_By_Volume_format_options)
+doc.SetUnits(units)
+
+#Отопительная нагрузка на единицу объема(ОВК)
+HVAC_Heating_Load_Divided_By_Volume_unit_type = UnitType.UT_HVAC_Heating_Load_Divided_By_Volume
+HVAC_Heating_Load_Divided_By_Volume_format_options = units.GetFormatOptions(HVAC_Heating_Load_Divided_By_Volume_unit_type)
+HVAC_Heating_Load_Divided_By_Volume_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Heating_Load_Divided_By_Volume_unit_type, HVAC_Heating_Load_Divided_By_Volume_format_options)
+doc.SetUnits(units)
+
+#Воздушный поток на единицу объема(ОВК)
+HVAC_Airflow_Divided_By_Volume_unit_type = UnitType.UT_HVAC_Airflow_Divided_By_Volume
+HVAC_Airflow_Divided_By_Volume_format_options = units.GetFormatOptions(HVAC_Airflow_Divided_By_Volume_unit_type)
+HVAC_Airflow_Divided_By_Volume_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Airflow_Divided_By_Volume_unit_type, HVAC_Airflow_Divided_By_Volume_format_options)
+doc.SetUnits(units)
+
+#Воздушный поток, отнесенный к холодильной нагрузке(ОВК)
+HVAC_Airflow_Divided_By_Cooling_Load_unit_type = UnitType.UT_HVAC_Airflow_Divided_By_Cooling_Load
+HVAC_Airflow_Divided_By_Cooling_Load_format_options = units.GetFormatOptions(HVAC_Airflow_Divided_By_Cooling_Load_unit_type)
+HVAC_Airflow_Divided_By_Cooling_Load_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Airflow_Divided_By_Cooling_Load_unit_type, HVAC_Airflow_Divided_By_Cooling_Load_format_options)
+doc.SetUnits(units)
+
+#Площадь, отнесенная к холодильной нагрузке(ОВК)
+UT_HVAC_Area_Divided_By_Cooling_Load_unit_type = UnitType.UT_HVAC_Area_Divided_By_Cooling_Load
+UT_HVAC_Area_Divided_By_Cooling_Load_format_options = units.GetFormatOptions(UT_HVAC_Area_Divided_By_Cooling_Load_unit_type)
+UT_HVAC_Area_Divided_By_Cooling_Load_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_Area_Divided_By_Cooling_Load_unit_type, UT_HVAC_Area_Divided_By_Cooling_Load_format_options)
+doc.SetUnits(units)
+
+#Площадь на единицу отопительной нагрузки(ОВК)
+UT_HVAC_Area_Divided_By_Heating_Load_unit_type = UnitType.UT_HVAC_Area_Divided_By_Heating_Load
+UT_HVAC_Area_Divided_By_Heating_Load_format_options = units.GetFormatOptions(UT_HVAC_Area_Divided_By_Heating_Load_unit_type)
+UT_HVAC_Area_Divided_By_Heating_Load_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_Area_Divided_By_Heating_Load_unit_type, UT_HVAC_Area_Divided_By_Heating_Load_format_options)
+doc.SetUnits(units)
+
+#Уклон(ОВК)
+HVAC_Slope_unit_type = UnitType.UT_HVAC_Slope
+HVAC_Slope_format_options = units.GetFormatOptions(HVAC_Slope_unit_type)
+HVAC_Slope_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(HVAC_Slope_unit_type, HVAC_Slope_format_options)
+doc.SetUnits(units)
+
+#Коэффициент(ОВК)
+UT_HVAC_Factor_unit_type = UnitType.UT_HVAC_Factor
+UT_HVAC_Factor_format_options = units.GetFormatOptions(UT_HVAC_Factor_unit_type)
+UT_HVAC_Factor_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_Factor_unit_type, UT_HVAC_Factor_format_options)
+doc.SetUnits(units)
+
+#Толщина изоляции воздуховода(ОВК)
+UT_HVAC_DuctInsulationThickness_unit_type = UnitType.UT_HVAC_DuctInsulationThickness
+UT_HVAC_DuctInsulationThickness_format_options = units.GetFormatOptions(UT_HVAC_DuctInsulationThickness_unit_type)
+UT_HVAC_DuctInsulationThickness_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_DuctInsulationThickness_unit_type, UT_HVAC_DuctInsulationThickness_format_options)
+doc.SetUnits(units)
+
+#Толщина внутренней изоляции воздуховода(ОВК)
+UT_HVAC_DuctLiningThickness_unit_type = UnitType.UT_HVAC_DuctLiningThickness
+UT_HVAC_DuctLiningThickness_format_options = units.GetFormatOptions(UT_HVAC_DuctLiningThickness_unit_type)
+UT_HVAC_DuctLiningThickness_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_DuctLiningThickness_unit_type, UT_HVAC_DuctLiningThickness_format_options)
+doc.SetUnits(units)
+
+
+
+"Раздел 'Трубопроводы'"
+#Плотность(Трубопроводы)
+Piping_Density_unit_type = UnitType.UT_Piping_Density
+Piping_Density_format_options = units.GetFormatOptions(Piping_Density_unit_type)
+Piping_Density_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Piping_Density_unit_type, Piping_Density_format_options)
+doc.SetUnits(units)
+
+#Расход(Трубопроводы)
+Piping_Flow_unit_type = UnitType.UT_Piping_Flow
+Piping_Flow_format_options = units.GetFormatOptions(Piping_Flow_unit_type)
+Piping_Flow_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Piping_Flow_unit_type, Piping_Flow_format_options)
+doc.SetUnits(units)
+
+#Трение(Трубопроводы)
+Piping_Friction_unit_type = UnitType.UT_Piping_Friction
+Piping_Friction_format_options = units.GetFormatOptions(Piping_Friction_unit_type)
+Piping_Friction_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Piping_Friction_unit_type, Piping_Friction_format_options)
+doc.SetUnits(units)
+
+#Давление(Трубопроводы)
+Piping_Pressure_unit_type = UnitType.UT_Piping_Pressure
+Piping_Pressure_format_options = units.GetFormatOptions(Piping_Pressure_unit_type)
+Piping_Pressure_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Piping_Pressure_unit_type, Piping_Pressure_format_options)
+doc.SetUnits(units)
+
+#Температура(Трубопроводы)
+Piping_Temperature_unit_type = UnitType.UT_Piping_Temperature
+Piping_Temperature_format_options = units.GetFormatOptions(Piping_Temperature_unit_type)
+Piping_Temperature_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Piping_Temperature_unit_type, Piping_Temperature_format_options)
+doc.SetUnits(units)
+
+#Скорость(Трубопроводы)
+UT_Piping_Velocity_unit_type = UnitType.UT_Piping_Velocity
+UT_Piping_Velocity_format_options = units.GetFormatOptions(UT_Piping_Velocity_unit_type)
+UT_Piping_Velocity_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Piping_Velocity_unit_type, UT_Piping_Velocity_format_options)
+doc.SetUnits(units)
+
+#Динамическая вязкость(Трубопроводы)
+Piping_Viscosity_unit_type = UnitType.UT_Piping_Viscosity
+Piping_Viscosity_format_options = units.GetFormatOptions(Piping_Viscosity_unit_type)
+Piping_Viscosity_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Piping_Viscosity_unit_type, Piping_Viscosity_format_options)
+doc.SetUnits(units)
+
+#Размер трубы(Трубопроводы)
+PipeSize_unit_type = UnitType.UT_PipeSize
+PipeSize_format_options = units.GetFormatOptions(PipeSize_unit_type)
+PipeSize_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(PipeSize_unit_type, PipeSize_format_options)
+doc.SetUnits(units)
+
+#Шероховатость(Трубопроводы)
+Piping_Roughness_unit_type = UnitType.UT_Piping_Roughness
+Piping_Roughness_format_options = units.GetFormatOptions(Piping_Roughness_unit_type)
+Piping_Roughness_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Piping_Roughness_unit_type, Piping_Roughness_format_options)
+doc.SetUnits(units)
+
+#Объем(Трубопроводы)
+Piping_Volume_unit_type = UnitType.UT_Piping_Volume
+Piping_Volume_format_options = units.GetFormatOptions(Piping_Volume_unit_type)
+Piping_Volume_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Piping_Volume_unit_type, Piping_Volume_format_options)
+doc.SetUnits(units)
+
+#Уклон(Трубопроводы)
+UT_Piping_Slope_unit_type = UnitType.UT_Piping_Slope
+UT_Piping_Slope_format_options = units.GetFormatOptions(UT_Piping_Slope_unit_type)
+UT_Piping_Slope_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Piping_Slope_unit_type, UT_Piping_Slope_format_options)
+doc.SetUnits(units)
+
+#Толщина изоляции трубы(Трубопроводы)
+UT_PipeInsulationThickness_unit_type = UnitType.UT_PipeInsulationThickness
+UT_PipeInsulationThickness_format_options = units.GetFormatOptions(UT_PipeInsulationThickness_unit_type)
+UT_PipeInsulationThickness_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_PipeInsulationThickness_unit_type, UT_PipeInsulationThickness_format_options)
+doc.SetUnits(units)
+
+#Толщина изоляции трубы(Трубопроводы)
+UT_Pipe_Dimension_unit_type = UnitType.UT_Pipe_Dimension
+UT_Pipe_Dimension_format_options = units.GetFormatOptions(UT_Pipe_Dimension_unit_type)
+UT_Pipe_Dimension_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_Pipe_Dimension_unit_type, UT_Pipe_Dimension_format_options)
+doc.SetUnits(units)
+
+#Масса(Трубопроводы)
+UT_PipeMass_unit_type = UnitType.UT_PipeMass
+UT_PipeMass_format_options = units.GetFormatOptions(UT_PipeMass_unit_type)
+UT_PipeMass_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_PipeMass_unit_type, UT_PipeMass_format_options)
+doc.SetUnits(units)
+
+#Масса на единицу длины(Трубопроводы)
+UT_PipeMassPerUnitLength_unit_type = UnitType.UT_PipeMassPerUnitLength
+UT_PipeMassPerUnitLength_format_options = units.GetFormatOptions(UT_PipeMassPerUnitLength_unit_type)
+UT_PipeMassPerUnitLength_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_PipeMassPerUnitLength_unit_type, UT_PipeMassPerUnitLength_format_options)
+doc.SetUnits(units)
+
+
+"Раздел 'Энергия'"
+#Энергия(Энергия)
+UT_HVAC_Energy_unit_type = UnitType.UT_HVAC_Energy
+UT_HVAC_Energy_format_options = units.GetFormatOptions(UT_HVAC_Energy_unit_type)
+UT_HVAC_Energy_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_Energy_unit_type, UT_HVAC_Energy_format_options)
+
+#Коэффициент теплопередачи(Энергия)
+UT_HVAC_CoefficientOfHeatTransfer_unit_type = UnitType.UT_HVAC_CoefficientOfHeatTransfer
+UT_HVAC_CoefficientOfHeatTransfer_format_options = units.GetFormatOptions(UT_HVAC_CoefficientOfHeatTransfer_unit_type)
+UT_HVAC_CoefficientOfHeatTransfer_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_CoefficientOfHeatTransfer_unit_type, UT_HVAC_CoefficientOfHeatTransfer_format_options)
+
+#Термостойкость(Энергия)
+UT_HVAC_ThermalResistance_unit_type = UnitType.UT_HVAC_ThermalResistance
+UT_HVAC_ThermalResistance_format_options = units.GetFormatOptions(UT_HVAC_ThermalResistance_unit_type)
+UT_HVAC_ThermalResistance_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_ThermalResistance_unit_type, UT_HVAC_ThermalResistance_format_options)
+
+#Тепловая нагрузка(Энергия)
+UT_HVAC_ThermalMass_unit_type = UnitType.UT_HVAC_ThermalMass
+UT_HVAC_ThermalMass_format_options = units.GetFormatOptions(UT_HVAC_ThermalMass_unit_type)
+UT_HVAC_ThermalMass_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_ThermalMass_unit_type, UT_HVAC_ThermalMass_format_options)
+
+#Теплопроводность(Энергия)
+UT_HVAC_ThermalConductivity_unit_type = UnitType.UT_HVAC_ThermalConductivity
+UT_HVAC_ThermalConductivity_format_options = units.GetFormatOptions(UT_HVAC_ThermalConductivity_unit_type)
+UT_HVAC_ThermalConductivity_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_ThermalConductivity_unit_type, UT_HVAC_ThermalConductivity_format_options)
+
+#Удельная теплоемкость(Энергия)
+UT_HVAC_SpecificHeat_unit_type = UnitType.UT_HVAC_SpecificHeat
+UT_HVAC_SpecificHeat_format_options = units.GetFormatOptions(UT_HVAC_SpecificHeat_unit_type)
+UT_HVAC_SpecificHeat_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_SpecificHeat_unit_type, UT_HVAC_SpecificHeat_format_options)
+
+#Удельная теплота парообразования(Энергия)
+UT_HVAC_SpecificHeatOfVaporization_unit_type = UnitType.UT_HVAC_SpecificHeatOfVaporization
+UT_HVAC_SpecificHeatOfVaporization_format_options = units.GetFormatOptions(UT_HVAC_SpecificHeatOfVaporization_unit_type)
+UT_HVAC_SpecificHeatOfVaporization_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_SpecificHeatOfVaporization_unit_type, UT_HVAC_SpecificHeatOfVaporization_format_options)
+
+#Проницаемость(Энергия)
+UT_HVAC_Permeability_unit_type = UnitType.UT_HVAC_Permeability
+UT_HVAC_Permeability_format_options = units.GetFormatOptions(UT_HVAC_Permeability_unit_type)
+UT_HVAC_Permeability_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_HVAC_Permeability_unit_type, UT_HVAC_Permeability_format_options)
+
+
+
+"Раздел 'Электросети'"
+#Ток(Электросети)
+Electrical_Current_unit_type = UnitType.UT_Electrical_Current
+Electrical_Current_format_options = units.GetFormatOptions(Electrical_Current_unit_type)
+Electrical_Current_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_Current_unit_type, Electrical_Current_format_options)
+doc.SetUnits(units)
+
+#Электрически потенциал(Электросети)
+Electrical_Potential_unit_type = UnitType.UT_Electrical_Potential
+Electrical_Potential_format_options = units.GetFormatOptions(Electrical_Potential_unit_type)
+Electrical_Potential_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_Potential_unit_type, Electrical_Potential_format_options)
+doc.SetUnits(units)
+
+#Частота(Электросети)
+Electrical_Frequency_unit_type = UnitType.UT_Electrical_Frequency
+Electrical_Frequency_format_options = units.GetFormatOptions(Electrical_Frequency_unit_type)
+Electrical_Frequency_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_Frequency_unit_type, Electrical_Frequency_format_options)
+doc.SetUnits(units)
+
+#Освещенность(Электросети)
+Electrical_Illuminance_unit_type = UnitType.UT_Electrical_Illuminance
+Electrical_Illuminance_format_options = units.GetFormatOptions(Electrical_Illuminance_unit_type)
+Electrical_Illuminance_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_Illuminance_unit_type, Electrical_Illuminance_format_options)
+doc.SetUnits(units)
+
+#Яркость(Электросети)
+Electrical_Luminance_unit_type = UnitType.UT_Electrical_Luminance
+Electrical_Luminance_format_options = units.GetFormatOptions(Electrical_Luminance_unit_type)
+Electrical_Luminance_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_Luminance_unit_type, Electrical_Luminance_format_options)
+doc.SetUnits(units)
+
+#Световой поток(Электросети)
+Electrical_Luminous_Flux_unit_type = UnitType.UT_Electrical_Luminous_Flux
+Electrical_Luminous_Flux_format_options = units.GetFormatOptions(Electrical_Luminous_Flux_unit_type)
+Electrical_Luminous_Flux_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_Luminous_Flux_unit_type, Electrical_Luminous_Flux_format_options)
+doc.SetUnits(units)
+
+#Сила света(Электросети)
+Electrical_Luminous_Intensity_unit_type = UnitType.UT_Electrical_Luminous_Intensity
+Electrical_Luminous_Intensity_format_options = units.GetFormatOptions(Electrical_Luminous_Intensity_unit_type)
+Electrical_Luminous_Intensity_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_Luminous_Intensity_unit_type, Electrical_Luminous_Intensity_format_options)
+doc.SetUnits(units)
+
+#Эффективность(Электросети)
+Electrical_Efficacy_unit_type = UnitType.UT_Electrical_Efficacy
+Electrical_Efficacy_format_options = units.GetFormatOptions(Electrical_Efficacy_unit_type)
+Electrical_Efficacy_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_Efficacy_unit_type, Electrical_Efficacy_format_options)
+doc.SetUnits(units)
+
+#Мощность(Электросети)
+Electrical_Power_unit_type = UnitType.UT_Electrical_Power
+Electrical_Power_format_options = units.GetFormatOptions(Electrical_Power_unit_type)
+Electrical_Power_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_Power_unit_type, Electrical_Power_format_options)
+
+#Цветовая температура(Электросети)
+Color_Temperature_unit_type = UnitType.UT_Color_Temperature
+Color_Temperature_format_options = units.GetFormatOptions(Color_Temperature_unit_type)
+Color_Temperature_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Color_Temperature_unit_type, Color_Temperature_format_options)
+doc.SetUnits(units)
+
+#Мощность(Электросети)
+Electrical_Wattage_unit_type = UnitType.UT_Electrical_Wattage
+Electrical_Wattage_format_options = units.GetFormatOptions(Electrical_Wattage_unit_type)
+Electrical_Wattage_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_Wattage_unit_type, Electrical_Wattage_format_options)
+doc.SetUnits(units)
+
+#Полная установленная мощность(Электросети)
+Electrical_Apparent_Power_unit_type = UnitType.UT_Electrical_Apparent_Power
+Electrical_Apparent_Power_format_options = units.GetFormatOptions(Electrical_Apparent_Power_unit_type)
+Electrical_Apparent_Power_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_Apparent_Power_unit_type, Electrical_Apparent_Power_format_options)
+doc.SetUnits(units)
+
+#Удельная мощность(Электросети)
+Electrical_Power_Density_unit_type = UnitType.UT_Electrical_Power_Density
+Electrical_Power_Density_format_options = units.GetFormatOptions(Electrical_Power_Density_unit_type)
+Electrical_Power_Density_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_Power_Density_unit_type, Electrical_Power_Density_format_options)
+doc.SetUnits(units)
+
+#Электрическое удельно есопротивление(Электросети)
+Electrical_Resistivity_unit_type = UnitType.UT_Electrical_Resistivity
+Electrical_Resistivity_format_options = units.GetFormatOptions(Electrical_Resistivity_unit_type)
+Electrical_Resistivity_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_Resistivity_unit_type, Electrical_Resistivity_format_options)
+doc.SetUnits(units)
+
+#Диаметр провода(Электросети)
+UT_WireSize_unit_type = UnitType.UT_WireSize
+UT_WireSize_format_options = units.GetFormatOptions(UT_WireSize_unit_type)
+UT_WireSize_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(UT_WireSize_unit_type, UT_WireSize_format_options)
+doc.SetUnits(units)
+
+#Температура(Электросети)
+Electrical_Temperature_unit_type = UnitType.UT_Electrical_Temperature
+Electrical_Temperature_format_options = units.GetFormatOptions(Electrical_Temperature_unit_type)
+Electrical_Temperature_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_Temperature_unit_type, Electrical_Temperature_format_options)
+doc.SetUnits(units)
+
+#Размер кабельного лотка(Электросети)
+Electrical_CableTraySize_unit_type = UnitType.UT_Electrical_CableTraySize
+Electrical_CableTraySize_format_options = units.GetFormatOptions(Electrical_CableTraySize_unit_type)
+Electrical_CableTraySize_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_CableTraySize_unit_type, Electrical_CableTraySize_format_options)
+doc.SetUnits(units)
+
+#Размер короба(Электросети)
+Electrical_ConduitSize_unit_type = UnitType.UT_Electrical_ConduitSize
+Electrical_ConduitSize_format_options = units.GetFormatOptions(Electrical_ConduitSize_unit_type)
+Electrical_ConduitSize_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_ConduitSize_unit_type, Electrical_ConduitSize_format_options)
+doc.SetUnits(units)
+
+#Коэффициент спроса нагрузки(Электросети)
+Electrical_Demand_Factor_unit_type = UnitType.UT_Electrical_Demand_Factor
+Electrical_Demand_Factor_format_options = units.GetFormatOptions(Electrical_Demand_Factor_unit_type)
+Electrical_Demand_Factor_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+units.SetFormatOptions(Electrical_Demand_Factor_unit_type, Electrical_Demand_Factor_format_options)
+doc.SetUnits(units)
+
+
+
+doc.SetUnits(units)
+OUT = "units changed to user settings"
