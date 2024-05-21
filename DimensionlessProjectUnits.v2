@@ -1,0 +1,158 @@
+import clr
+clr.AddReference('RevitAPI')
+from Autodesk.Revit.DB import *
+clr.AddReference('RevitServices')
+import RevitServices
+from RevitServices.Persistence import DocumentManager
+from RevitServices.Transactions import TransactionManager
+
+
+
+doc = DocumentManager.Instance.CurrentDBDocument
+TransactionManager.Instance.EnsureInTransaction(doc)
+units = doc.GetUnits()
+
+
+
+list_of_unit_types = [
+    UnitType.UT_Length,                                     #"Раздел 'Общие', Длина.
+    UnitType.UT_Area,                                       #"Раздел 'Общие', Площадь.
+    UnitType.UT_Volume,                                     #"Раздел 'Общие', Объем.
+    UnitType.UT_Angle,                                      #"Раздел 'Общие', Угол.
+    UnitType.UT_Slope,                                      #"Раздел 'Общие', Уклон.
+    UnitType.UT_MassDensity,                                #"Раздел 'Общие', Массовая плотность.
+    UnitType.UT_Currency,                                   #"Раздел 'Общие', Денежная единица.
+    UnitType.UT_TimeInterval,                               #"Раздел 'Общие', Время.
+    UnitType.UT_Speed,                                      #"Раздел 'Общие', Скорость.
+    UnitType.UT_Force,                                      #"Раздел 'Несущие конструкции'", Усилие.
+    UnitType.UT_LinearForce,                                #"Раздел 'Несущие конструкции'", Распределенная нагрузка по линии.
+    UnitType.UT_AreaForce,                                  #"Раздел 'Несущие конструкции'", Распределеннвя нагрузка.
+    UnitType.UT_Moment,                                     #"Раздел 'Несущие конструкции'", Момент.
+    UnitType.UT_LinearMoment,                               #"Раздел 'Несущие конструкции'", Линейный момент.
+    UnitType.UT_Stress,                                     #"Раздел 'Несущие конструкции'", Напряжение.
+    UnitType.UT_UnitWeight,                                 #"Раздел 'Несущие конструкции'", Единица измерения.
+    UnitType.UT_Weight,                                     #"Раздел 'Несущие конструкции'", Удельный вес.
+    UnitType.UT_Mass,                                       #"Раздел 'Несущие конструкции'", Масса.
+    UnitType.UT_MassPerUnitArea,                            #"Раздел 'Несущие конструкции'", Масса на единицу площади.
+    UnitType.UT_ThermalExpansion,                           #"Раздел 'Несущие конструкции'", Коэффициент теплового расширения.
+    UnitType.UT_ForcePerLength,                             #"Раздел 'Несущие конструкции'", Сосредоточенный коэффициент упругости.
+    UnitType.UT_ForceLengthPerAngle,                        #"Раздел 'Несущие конструкции'", Сосредоточенный угловой коэффициент упругости.
+    UnitType.UT_LinearForcePerLength,                       #"Раздел 'Несущие конструкции'", Линейный коэффициент упругости.
+    UnitType.UT_AreaForcePerLength,                         #"Раздел 'Несущие конструкции'", Коэффициент упругости среды.
+    UnitType.UT_LinearForceLengthPerAngle,                  #"Раздел 'Несущие конструкции'", Линейный угловой коэффициент.
+    UnitType.UT_Displacement_Deflection,                    #"Раздел 'Несущие конструкции'", Смещение/Прогиб.
+    UnitType.UT_Rotation,                                   #"Раздел 'Несущие конструкции'", Вращение.
+    UnitType.UT_Period,                                     #"Раздел 'Несущие конструкции'", Период.
+    UnitType.UT_Structural_Frequency,                       #"Раздел 'Несущие конструкции'", Частота.
+    UnitType.UT_Pulsation,                                  #"Раздел 'Несущие конструкции'", Пульсация.
+    UnitType.UT_Structural_Velocity,                        #"Раздел 'Несущие конструкции'", Скорость.
+    UnitType.UT_Acceleration,                               #"Раздел 'Несущие конструкции'", Ускорение.
+    UnitType.UT_Energy,                                     #"Раздел 'Несущие конструкции'", Энергия.
+    UnitType.UT_Reinforcement_Volume,                       #"Раздел 'Несущие конструкции'", Объем арматуры.
+    UnitType.UT_Reinforcement_Length,                       #"Раздел 'Несущие конструкции'", Длина армирования.
+    UnitType.UT_Reinforcement_Area,                         #"Раздел 'Несущие конструкции'", Армирование по площади.
+    UnitType.UT_Reinforcement_Area_per_Unit_Length,         #"Раздел 'Несущие конструкции'", Армирование по площади на единицу длины.
+    UnitType.UT_Reinforcement_Spacing,                      #"Раздел 'Несущие конструкции'", Интервал армирования.
+    UnitType.UT_Reinforcement_Cover,                        #"Раздел 'Несущие конструкции'", Защитный слой армирования.
+    UnitType.UT_Bar_Diameter,                               #"Раздел 'Несущие конструкции'", Диаметр стержня.
+    UnitType.UT_Crack_Width,                                #"Раздел 'Несущие конструкции'", Ширина трещины.
+    UnitType.UT_Section_Dimension,                          #"Раздел 'Несущие конструкции'", Размеры сечения.
+    UnitType.UT_Section_Property,                           #"Раздел 'Несущие конструкции'", Свойство сечения.
+    UnitType.UT_Section_Area,                               #"Раздел 'Несущие конструкции'", Площадь сечения.
+    UnitType.UT_Section_Modulus,                            #"Раздел 'Несущие конструкции'", Момент сопротивления сечения.
+    UnitType.UT_Moment_of_Inertia,                          #"Раздел 'Несущие конструкции'", Момент инерции.
+    UnitType.UT_Warping_Constant,                           #"Раздел 'Несущие конструкции'", Постоянная перекоса.
+    UnitType.UT_Mass_per_Unit_Length,                       #"Раздел 'Несущие конструкции'", Масса на единицу длины.
+    UnitType.UT_Weight_per_Unit_Length,                     #"Раздел 'Несущие конструкции'", Вес на единицу длины.
+    UnitType.UT_Surface_Area,                               #"Раздел 'Несущие конструкции'", Площадь поверхности на единицу длины.
+    UnitType.UT_HVAC_Density,                               #"Раздел 'Раздел 'ОВК'", Плотность.
+    UnitType.UT_HVAC_Friction,                              #"Раздел 'Раздел 'ОВК'", Трение.
+    UnitType.UT_HVAC_Power,                                 #"Раздел 'Раздел 'ОВК'", Мощность.
+    UnitType.UT_HVAC_Power_Density,                         #"Раздел 'Раздел 'ОВК'", Удельная мощность.
+    UnitType.UT_HVAC_Pressure,                              #"Раздел 'Раздел 'ОВК'", Давление.
+    UnitType.UT_HVAC_Temperature,                           #"Раздел 'Раздел 'ОВК'", Температура.
+    UnitType.UT_HVAC_Velocity,                              #"Раздел 'Раздел 'ОВК'", Скорость.
+    UnitType.UT_HVAC_Airflow,                               #"Раздел 'Раздел 'ОВК'", Воздушный поток.
+    UnitType.UT_HVAC_DuctSize,                              #"Раздел 'Раздел 'ОВК'", Размер воздуховода.
+    UnitType.UT_HVAC_CrossSection,                          #"Раздел 'Раздел 'ОВК'", Поперечный разрез.
+    UnitType.UT_HVAC_HeatGain,                              #"Раздел 'Раздел 'ОВК'", Теплоприток.
+    UnitType.UT_HVAC_Roughness,                             #"Раздел 'Раздел 'ОВК'", Шероховатость.
+    UnitType.UT_HVAC_Viscosity,                             #"Раздел 'Раздел 'ОВК'", Динамическая вязкость.
+    UnitType.UT_HVAC_Airflow_Density,                       #"Раздел 'Раздел 'ОВК'", Плотность воздушного потока.
+    UnitType.UT_HVAC_Cooling_Load,                          #"Раздел 'Раздел 'ОВК'", Холодильная нагрузка.
+    UnitType.UT_HVAC_Heating_Load,                          #"Раздел 'Раздел 'ОВК'", Отопительная нагрузка.
+    UnitType.UT_HVAC_Cooling_Load_Divided_By_Area,          #"Раздел 'Раздел 'ОВК'", Холодильная нагрузка на единицу площади.
+    UnitType.UT_HVAC_Heating_Load_Divided_By_Area,          #"Раздел 'Раздел 'ОВК'", Отопительная нагрузка на единицу площади.
+    UnitType.UT_HVAC_Cooling_Load_Divided_By_Volume,        #"Раздел 'Раздел 'ОВК'", Холодильная нагрузка на единицу объема.
+    UnitType.UT_HVAC_Heating_Load_Divided_By_Volume,        #"Раздел 'Раздел 'ОВК'", Отопительная нагрузка на единицу объема.
+    UnitType.UT_HVAC_Airflow_Divided_By_Volume,             #"Раздел 'Раздел 'ОВК'", Воздушный поток на единицу объема.
+    UnitType.UT_HVAC_Airflow_Divided_By_Cooling_Load,       #"Раздел 'Раздел 'ОВК'", Воздушный поток, отнесенный к холодильной нагрузке.
+    UnitType.UT_HVAC_Area_Divided_By_Cooling_Load,          #"Раздел 'Раздел 'ОВК'", Площадь, отнесенная к холодильной нагрузке.
+    UnitType.UT_HVAC_Area_Divided_By_Heating_Load,          #"Раздел 'Раздел 'ОВК'", Площадь на единицу отопительной нагрузки.
+    UnitType.UT_HVAC_Slope,                                 #"Раздел 'Раздел 'ОВК'", Уклон.
+    UnitType.UT_HVAC_Factor,                                #"Раздел 'Раздел 'ОВК'", Коэффициент.
+    UnitType.UT_HVAC_DuctInsulationThickness,               #"Раздел 'Раздел 'ОВК'", Толщина изоляции воздуховода.
+    UnitType.UT_HVAC_DuctLiningThickness,                   #"Раздел 'Раздел 'ОВК'", Толщина внутренней изоляции воздуховода.
+    UnitType.UT_Piping_Density,                             #"Раздел 'Трубопроводы'", Плотность.
+    UnitType.UT_Piping_Flow,                                #"Раздел 'Трубопроводы'", Расход.
+    UnitType.UT_Piping_Friction,                            #"Раздел 'Трубопроводы'", Трение.
+    UnitType.UT_Piping_Pressure,                            #"Раздел 'Трубопроводы'", Давление.
+    UnitType.UT_Piping_Temperature,                         #"Раздел 'Трубопроводы'", Температура.
+    UnitType.UT_Piping_Velocity,                            #"Раздел 'Трубопроводы'", Скорость.
+    UnitType.UT_Piping_Viscosity,                           #"Раздел 'Трубопроводы'", Динамическая вязкость.
+    UnitType.UT_PipeSize,                                   #"Раздел 'Трубопроводы'", Размер трубы.
+    UnitType.UT_Piping_Roughness,                           #"Раздел 'Трубопроводы'", Шероховатость.
+    UnitType.UT_Piping_Volume,                              #"Раздел 'Трубопроводы'", Объем.
+    UnitType.UT_Piping_Slope,                               #"Раздел 'Трубопроводы'", Уклон.
+    UnitType.UT_PipeInsulationThickness,                    #"Раздел 'Трубопроводы'", Толщина изоляции трубы.
+    UnitType.UT_Pipe_Dimension,                             #"Раздел 'Трубопроводы'", Размер трубы.
+    UnitType.UT_PipeMass,                                   #"Раздел 'Трубопроводы'", Масса.
+    UnitType.UT_PipeMassPerUnitLength,                      #"Раздел 'Трубопроводы'", Масса на единицу длины.
+    UnitType.UT_HVAC_Energy,                                #"Раздел 'Энергия'", Энергия.
+    UnitType.UT_HVAC_CoefficientOfHeatTransfer,             #"Раздел 'Энергия'", Коэффициент теплопередачи.
+    UnitType.UT_HVAC_ThermalResistance,                     #"Раздел 'Энергия'", Термостойкость.
+    UnitType.UT_HVAC_ThermalMass,                           #"Раздел 'Энергия'", Тепловая нагрузка.
+    UnitType.UT_HVAC_ThermalConductivity,                   #"Раздел 'Энергия'", Теплопроводность.
+    UnitType.UT_HVAC_SpecificHeat,                          #"Раздел 'Энергия'", Удельная теплоемкость.
+    UnitType.UT_HVAC_SpecificHeatOfVaporization,            #"Раздел 'Энергия'", Удельная теплота парообразования.
+    UnitType.UT_HVAC_Permeability,                          #"Раздел 'Энергия'", Проницаемость.
+    UnitType.UT_Electrical_Current,                         #"Раздел 'Электросети'", Ток.
+    UnitType.UT_Electrical_Potential,                       #"Раздел 'Электросети'", Электрически потенциал.
+    UnitType.UT_Electrical_Frequency,                       #"Раздел 'Электросети'", Частота.
+    UnitType.UT_Electrical_Illuminance,                     #"Раздел 'Электросети'", Освещенность.
+    UnitType.UT_Electrical_Luminance,                       #"Раздел 'Электросети'", Яркость.
+    UnitType.UT_Electrical_Luminous_Flux,                   #"Раздел 'Электросети'", Световой поток.
+    UnitType.UT_Electrical_Luminous_Intensity,              #"Раздел 'Электросети'", Сила света.
+    UnitType.UT_Electrical_Efficacy,                        #"Раздел 'Электросети'", Эффективность.
+    UnitType.UT_Electrical_Power,                           #"Раздел 'Электросети'", Мощность.
+    UnitType.UT_Color_Temperature,                          #"Раздел 'Электросети'", Цветовая температура.
+    UnitType.UT_Electrical_Wattage,                         #"Раздел 'Электросети'", Мощность.
+    UnitType.UT_Electrical_Apparent_Power,                  #"Раздел 'Электросети'", Полная установленная мощность.
+    UnitType.UT_Electrical_Power_Density,                   #"Раздел 'Электросети'", Удельная мощность.
+    UnitType.UT_Electrical_Resistivity,                     #"Раздел 'Электросети'", Электрическое удельно есопротивление.
+    UnitType.UT_WireSize,                                   #"Раздел 'Электросети'", Диаметр провода.
+    UnitType.UT_Electrical_Temperature,                     #"Раздел 'Электросети'", Температура.
+    UnitType.UT_Electrical_CableTraySize,                   #"Раздел 'Электросети'", Размер кабельного лотка.
+    UnitType.UT_Electrical_ConduitSize,                     #"Раздел 'Электросети'", Размер короба.
+    UnitType.UT_Electrical_Demand_Factor,                   #"Раздел 'Электросети'", Коэффициент спроса нагрузки.
+]
+
+
+
+
+
+#Коэффициент спроса нагрузки(Электросети)
+
+for unit_type in list_of_unit_types:
+    unit_type_format_options = units.GetFormatOptions(unit_type)
+    unit_type_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+    units.SetFormatOptions(unit_type, unit_type_format_options)
+    doc.SetUnits(units)
+
+
+
+doc.SetUnits(units)
+OUT = "units changed to user settings"
+
+
+
