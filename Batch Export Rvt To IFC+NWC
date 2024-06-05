@@ -1,0 +1,552 @@
+import clr
+import Autodesk
+from Autodesk.Revit.DB import *
+clr.AddReference("RevitAPI")
+from Autodesk.Revit.Exceptions import *
+from Autodesk.Revit.UI import TaskDialog
+from Autodesk.Revit.ApplicationServices import Application
+clr.AddReference("RevitServices")
+import RevitServices
+clr.AddReference('ProtoGeometry')
+from Autodesk.DesignScript.Geometry import *
+clr.AddReference("RevitNodes")
+import Revit
+clr.ImportExtensions(Revit.Elements)
+clr.ImportExtensions(Revit.GeometryConversion)
+from RevitServices.Persistence import DocumentManager
+from RevitServices.Transactions import TransactionManager
+from System.Collections.Generic import *
+import csv
+import os
+import codecs
+import datetime
+import shutil
+
+
+
+#Путь к CSV файлу.
+csv_file_path = r""
+
+
+
+#Версия IFC для экспорта (например, "IFC4").
+ifc_version = "IFC2x3" 
+
+
+
+#Создание пустого списка для хранения путей к файлам Revit из CSV файла.
+revit_files_paths = []
+#Открытие CSV файла с использованием кодировки UTF-8 и его чтение в режиме чтения ('r').
+#Параметр 'r' указывает на режим чтения файла.
+with codecs.open(csv_file_path, 'r', encoding='utf-8') as file:
+    #Создание объекта csv.reader для чтения содержимого CSV файла.
+    #Параметр delimiter=';' указывает разделитель столбцов в CSV файле.
+    csv_reader = csv.reader(file, delimiter=';')
+    #Проход по каждой строке в CSV файле с использованием цикла.
+    for row in csv_reader:
+        #Проверка, что текущая строка не пустая.
+        if row:
+            #Добавление первого элемента (пути к файлу Revit) из текущей строки в список revit_files_paths.
+            revit_files_paths.append(row[0])
+
+
+
+
+#Установка безразмерных единиц измерения перед осуществлением процесса эскпорта.
+#Список типов единиц измерения (в случае необходимости оставить единицы измерения у конкретного типа - закомментировать строку с соответствующим UnitType).
+list_of_unit_types = [
+    UnitType.UT_Length,                                     #"Раздел 'Общие', Длина.
+    UnitType.UT_Area,                                       #"Раздел 'Общие', Площадь.
+    UnitType.UT_Volume,                                     #"Раздел 'Общие', Объем.
+    UnitType.UT_Angle,                                      #"Раздел 'Общие', Угол.
+    UnitType.UT_Slope,                                      #"Раздел 'Общие', Уклон.
+    UnitType.UT_MassDensity,                                #"Раздел 'Общие', Массовая плотность.
+    UnitType.UT_Currency,                                   #"Раздел 'Общие', Денежная единица.
+    UnitType.UT_TimeInterval,                               #"Раздел 'Общие', Время.
+    UnitType.UT_Speed,                                      #"Раздел 'Общие', Скорость.
+    UnitType.UT_Force,                                      #"Раздел 'Несущие конструкции'", Усилие.
+    UnitType.UT_LinearForce,                                #"Раздел 'Несущие конструкции'", Распределенная нагрузка по линии.
+    UnitType.UT_AreaForce,                                  #"Раздел 'Несущие конструкции'", Распределеннвя нагрузка.
+    UnitType.UT_Moment,                                     #"Раздел 'Несущие конструкции'", Момент.
+    UnitType.UT_LinearMoment,                               #"Раздел 'Несущие конструкции'", Линейный момент.
+    UnitType.UT_Stress,                                     #"Раздел 'Несущие конструкции'", Напряжение.
+    UnitType.UT_UnitWeight,                                 #"Раздел 'Несущие конструкции'", Единица измерения.
+    UnitType.UT_Weight,                                     #"Раздел 'Несущие конструкции'", Удельный вес.
+    UnitType.UT_Mass,                                       #"Раздел 'Несущие конструкции'", Масса.
+    UnitType.UT_MassPerUnitArea,                            #"Раздел 'Несущие конструкции'", Масса на единицу площади.
+    UnitType.UT_ThermalExpansion,                           #"Раздел 'Несущие конструкции'", Коэффициент теплового расширения.
+    UnitType.UT_ForcePerLength,                             #"Раздел 'Несущие конструкции'", Сосредоточенный коэффициент упругости.
+    UnitType.UT_ForceLengthPerAngle,                        #"Раздел 'Несущие конструкции'", Сосредоточенный угловой коэффициент упругости.
+    UnitType.UT_LinearForcePerLength,                       #"Раздел 'Несущие конструкции'", Линейный коэффициент упругости.
+    UnitType.UT_AreaForcePerLength,                         #"Раздел 'Несущие конструкции'", Коэффициент упругости среды.
+    UnitType.UT_LinearForceLengthPerAngle,                  #"Раздел 'Несущие конструкции'", Линейный угловой коэффициент.
+    UnitType.UT_Displacement_Deflection,                    #"Раздел 'Несущие конструкции'", Смещение/Прогиб.
+    UnitType.UT_Rotation,                                   #"Раздел 'Несущие конструкции'", Вращение.
+    UnitType.UT_Period,                                     #"Раздел 'Несущие конструкции'", Период.
+    UnitType.UT_Structural_Frequency,                       #"Раздел 'Несущие конструкции'", Частота.
+    UnitType.UT_Pulsation,                                  #"Раздел 'Несущие конструкции'", Пульсация.
+    UnitType.UT_Structural_Velocity,                        #"Раздел 'Несущие конструкции'", Скорость.
+    UnitType.UT_Acceleration,                               #"Раздел 'Несущие конструкции'", Ускорение.
+    UnitType.UT_Energy,                                     #"Раздел 'Несущие конструкции'", Энергия.
+    UnitType.UT_Reinforcement_Volume,                       #"Раздел 'Несущие конструкции'", Объем арматуры.
+    UnitType.UT_Reinforcement_Length,                       #"Раздел 'Несущие конструкции'", Длина армирования.
+    UnitType.UT_Reinforcement_Area,                         #"Раздел 'Несущие конструкции'", Армирование по площади.
+    UnitType.UT_Reinforcement_Area_per_Unit_Length,         #"Раздел 'Несущие конструкции'", Армирование по площади на единицу длины.
+    UnitType.UT_Reinforcement_Spacing,                      #"Раздел 'Несущие конструкции'", Интервал армирования.
+    UnitType.UT_Reinforcement_Cover,                        #"Раздел 'Несущие конструкции'", Защитный слой армирования.
+    UnitType.UT_Bar_Diameter,                               #"Раздел 'Несущие конструкции'", Диаметр стержня.
+    UnitType.UT_Crack_Width,                                #"Раздел 'Несущие конструкции'", Ширина трещины.
+    UnitType.UT_Section_Dimension,                          #"Раздел 'Несущие конструкции'", Размеры сечения.
+    UnitType.UT_Section_Property,                           #"Раздел 'Несущие конструкции'", Свойство сечения.
+    UnitType.UT_Section_Area,                               #"Раздел 'Несущие конструкции'", Площадь сечения.
+    UnitType.UT_Section_Modulus,                            #"Раздел 'Несущие конструкции'", Момент сопротивления сечения.
+    UnitType.UT_Moment_of_Inertia,                          #"Раздел 'Несущие конструкции'", Момент инерции.
+    UnitType.UT_Warping_Constant,                           #"Раздел 'Несущие конструкции'", Постоянная перекоса.
+    UnitType.UT_Mass_per_Unit_Length,                       #"Раздел 'Несущие конструкции'", Масса на единицу длины.
+    UnitType.UT_Weight_per_Unit_Length,                     #"Раздел 'Несущие конструкции'", Вес на единицу длины.
+    UnitType.UT_Surface_Area,                               #"Раздел 'Несущие конструкции'", Площадь поверхности на единицу длины.
+    UnitType.UT_HVAC_Density,                               #"Раздел 'Раздел 'ОВК'", Плотность.
+    UnitType.UT_HVAC_Friction,                              #"Раздел 'Раздел 'ОВК'", Трение.
+    UnitType.UT_HVAC_Power,                                 #"Раздел 'Раздел 'ОВК'", Мощность.
+    UnitType.UT_HVAC_Power_Density,                         #"Раздел 'Раздел 'ОВК'", Удельная мощность.
+    UnitType.UT_HVAC_Pressure,                              #"Раздел 'Раздел 'ОВК'", Давление.
+    UnitType.UT_HVAC_Temperature,                           #"Раздел 'Раздел 'ОВК'", Температура.
+    UnitType.UT_HVAC_Velocity,                              #"Раздел 'Раздел 'ОВК'", Скорость.
+    UnitType.UT_HVAC_Airflow,                               #"Раздел 'Раздел 'ОВК'", Воздушный поток.
+    # UnitType.UT_HVAC_DuctSize,                              #"Раздел 'Раздел 'ОВК'", Размер воздуховода.
+    UnitType.UT_HVAC_CrossSection,                          #"Раздел 'Раздел 'ОВК'", Поперечный разрез.
+    UnitType.UT_HVAC_HeatGain,                              #"Раздел 'Раздел 'ОВК'", Теплоприток.
+    UnitType.UT_HVAC_Roughness,                             #"Раздел 'Раздел 'ОВК'", Шероховатость.
+    UnitType.UT_HVAC_Viscosity,                             #"Раздел 'Раздел 'ОВК'", Динамическая вязкость.
+    UnitType.UT_HVAC_Airflow_Density,                       #"Раздел 'Раздел 'ОВК'", Плотность воздушного потока.
+    UnitType.UT_HVAC_Cooling_Load,                          #"Раздел 'Раздел 'ОВК'", Холодильная нагрузка.
+    UnitType.UT_HVAC_Heating_Load,                          #"Раздел 'Раздел 'ОВК'", Отопительная нагрузка.
+    UnitType.UT_HVAC_Cooling_Load_Divided_By_Area,          #"Раздел 'Раздел 'ОВК'", Холодильная нагрузка на единицу площади.
+    UnitType.UT_HVAC_Heating_Load_Divided_By_Area,          #"Раздел 'Раздел 'ОВК'", Отопительная нагрузка на единицу площади.
+    UnitType.UT_HVAC_Cooling_Load_Divided_By_Volume,        #"Раздел 'Раздел 'ОВК'", Холодильная нагрузка на единицу объема.
+    UnitType.UT_HVAC_Heating_Load_Divided_By_Volume,        #"Раздел 'Раздел 'ОВК'", Отопительная нагрузка на единицу объема.
+    UnitType.UT_HVAC_Airflow_Divided_By_Volume,             #"Раздел 'Раздел 'ОВК'", Воздушный поток на единицу объема.
+    UnitType.UT_HVAC_Airflow_Divided_By_Cooling_Load,       #"Раздел 'Раздел 'ОВК'", Воздушный поток, отнесенный к холодильной нагрузке.
+    UnitType.UT_HVAC_Area_Divided_By_Cooling_Load,          #"Раздел 'Раздел 'ОВК'", Площадь, отнесенная к холодильной нагрузке.
+    UnitType.UT_HVAC_Area_Divided_By_Heating_Load,          #"Раздел 'Раздел 'ОВК'", Площадь на единицу отопительной нагрузки.
+    UnitType.UT_HVAC_Slope,                                 #"Раздел 'Раздел 'ОВК'", Уклон.
+    UnitType.UT_HVAC_Factor,                                #"Раздел 'Раздел 'ОВК'", Коэффициент.
+    # UnitType.UT_HVAC_DuctInsulationThickness,               #"Раздел 'Раздел 'ОВК'", Толщина изоляции воздуховода.
+    # UnitType.UT_HVAC_DuctLiningThickness,                   #"Раздел 'Раздел 'ОВК'", Толщина внутренней изоляции воздуховода.
+    UnitType.UT_Piping_Density,                             #"Раздел 'Трубопроводы'", Плотность.
+    UnitType.UT_Piping_Flow,                                #"Раздел 'Трубопроводы'", Расход.
+    UnitType.UT_Piping_Friction,                            #"Раздел 'Трубопроводы'", Трение.
+    UnitType.UT_Piping_Pressure,                            #"Раздел 'Трубопроводы'", Давление.
+    UnitType.UT_Piping_Temperature,                         #"Раздел 'Трубопроводы'", Температура.
+    UnitType.UT_Piping_Velocity,                            #"Раздел 'Трубопроводы'", Скорость.
+    UnitType.UT_Piping_Viscosity,                           #"Раздел 'Трубопроводы'", Динамическая вязкость.
+    UnitType.UT_PipeSize,                                   #"Раздел 'Трубопроводы'", Размер трубы.
+    UnitType.UT_Piping_Roughness,                           #"Раздел 'Трубопроводы'", Шероховатость.
+    UnitType.UT_Piping_Volume,                              #"Раздел 'Трубопроводы'", Объем.
+    UnitType.UT_Piping_Slope,                               #"Раздел 'Трубопроводы'", Уклон.
+    # UnitType.UT_PipeInsulationThickness,                    #"Раздел 'Трубопроводы'", Толщина изоляции трубы.
+    UnitType.UT_Pipe_Dimension,                             #"Раздел 'Трубопроводы'", Размер трубы.
+    UnitType.UT_PipeMass,                                   #"Раздел 'Трубопроводы'", Масса.
+    UnitType.UT_PipeMassPerUnitLength,                      #"Раздел 'Трубопроводы'", Масса на единицу длины.
+    UnitType.UT_HVAC_Energy,                                #"Раздел 'Энергия'", Энергия.
+    UnitType.UT_HVAC_CoefficientOfHeatTransfer,             #"Раздел 'Энергия'", Коэффициент теплопередачи.
+    UnitType.UT_HVAC_ThermalResistance,                     #"Раздел 'Энергия'", Термостойкость.
+    UnitType.UT_HVAC_ThermalMass,                           #"Раздел 'Энергия'", Тепловая нагрузка.
+    UnitType.UT_HVAC_ThermalConductivity,                   #"Раздел 'Энергия'", Теплопроводность.
+    UnitType.UT_HVAC_SpecificHeat,                          #"Раздел 'Энергия'", Удельная теплоемкость.
+    UnitType.UT_HVAC_SpecificHeatOfVaporization,            #"Раздел 'Энергия'", Удельная теплота парообразования.
+    UnitType.UT_HVAC_Permeability,                          #"Раздел 'Энергия'", Проницаемость.
+    UnitType.UT_Electrical_Current,                         #"Раздел 'Электросети'", Ток.
+    UnitType.UT_Electrical_Potential,                       #"Раздел 'Электросети'", Электрически потенциал.
+    UnitType.UT_Electrical_Frequency,                       #"Раздел 'Электросети'", Частота.
+    UnitType.UT_Electrical_Illuminance,                     #"Раздел 'Электросети'", Освещенность.
+    UnitType.UT_Electrical_Luminance,                       #"Раздел 'Электросети'", Яркость.
+    UnitType.UT_Electrical_Luminous_Flux,                   #"Раздел 'Электросети'", Световой поток.
+    UnitType.UT_Electrical_Luminous_Intensity,              #"Раздел 'Электросети'", Сила света.
+    UnitType.UT_Electrical_Efficacy,                        #"Раздел 'Электросети'", Эффективность.
+    UnitType.UT_Electrical_Power,                           #"Раздел 'Электросети'", Мощность.
+    UnitType.UT_Color_Temperature,                          #"Раздел 'Электросети'", Цветовая температура.
+    UnitType.UT_Electrical_Wattage,                         #"Раздел 'Электросети'", Мощность.
+    UnitType.UT_Electrical_Apparent_Power,                  #"Раздел 'Электросети'", Полная установленная мощность.
+    UnitType.UT_Electrical_Power_Density,                   #"Раздел 'Электросети'", Удельная мощность.
+    UnitType.UT_Electrical_Resistivity,                     #"Раздел 'Электросети'", Электрическое удельно есопротивление.
+    UnitType.UT_WireSize,                                   #"Раздел 'Электросети'", Диаметр провода.
+    UnitType.UT_Electrical_Temperature,                     #"Раздел 'Электросети'", Температура.
+    UnitType.UT_Electrical_CableTraySize,                   #"Раздел 'Электросети'", Размер кабельного лотка.
+    UnitType.UT_Electrical_ConduitSize,                     #"Раздел 'Электросети'", Размер короба.
+    UnitType.UT_Electrical_Demand_Factor,                   #"Раздел 'Электросети'", Коэффициент спроса нагрузки.
+]
+
+
+
+#Подготовка настроек экспорта IFC.
+options = IFCExportOptions()
+#Определение версии IFC.
+if ifc_version == "IFC4":
+    options.FileVersion = IFCVersion.IFC4
+elif ifc_version == "IFC2x2":
+    options.FileVersion = IFCVersion.IFC2x2
+elif ifc_version == "IFC2x3":
+    options.FileVersion = IFCVersion.IFC2x3
+elif ifc_version == "IFC2x3CV2":
+    options.FileVersion = IFCVersion.IFC2x3CV2
+elif ifc_version == "IFCBCA":
+    options.FileVersion = IFCVersion.IFCBCA
+elif ifc_version == "IFCCOBIE":
+    options.FileVersion = IFCVersion.IFCCOBIE
+else:
+    options.FileVersion = IFCVersion.Default
+#Настройки экспорта.
+
+#Параметр ExportInternalRevitPropertySets (True/False).
+ExportInternalRevitPropertySets = False
+options.WallAndColumnSplitting = False
+options.ExportBaseQuantities = True 
+options.AddOption("ExportInternalRevitPropertySets", str(ExportInternalRevitPropertySets))
+options.AddOption("ExportIFCCommonPropertySets", "false")
+options.AddOption("ExportAnnotations", "false")
+options.AddOption("SpaceBoundaries", "0")
+options.AddOption("ExportRoomsInView", "true")
+options.AddOption("Use2DRoomBoundaryForVolume", "false")
+options.AddOption("UseFamilyAndTypeNameForReference", "false")
+options.AddOption("Export2DElements", "false")
+options.AddOption("ExportPartsAsBuildingElements", "true")
+options.AddOption("ExportBoundingBox", "false")
+options.AddOption("ExportSolidModelRep", "false")
+options.AddOption("ExportSchedulesAsPsets", "false")
+options.AddOption("ExportSpecificSchedules", "false")
+options.AddOption("ExportLinkedFiles", "false")
+options.AddOption("IncludeSiteElevation", "true")
+options.AddOption("StoreIFCGUID", "true")
+options.AddOption("VisibleElementsOfCurrentView", "true")
+options.AddOption("UseActiveViewGeometry", "false")
+options.AddOption("TesselationLevelOfDetail", "3")
+options.AddOption("ExportUserDefinedPsets", "true")
+options.AddOption("SitePlacement", "0")
+
+#Функция для открытия файла Revit.
+def open_revit_file(application, model_path):
+    options = OpenOptions()
+    try:
+        #Попытка открыть документ Revit по указанному пути (model_path).
+        doc = application.OpenDocumentFile(model_path, options)
+        return doc
+    except Exception as e:
+        #Если возникает исключение, создается сообщение об ошибке.
+        error_message = "Не удалось открыть файл Revit: {}".format(e)
+        #Отображается диалоговое окно с сообщением об ошибке.
+        TaskDialog.Show("Ошибка", error_message)
+        return None
+
+
+
+#Функция для проверки существования файла и перемещения его в папку "BackUp", если он уже существует.
+def move_existing_file(output_folder, file_name):
+    #Определяем путь к папке "BackUp", где будут перемещены существующие файлы, если она еще не существует.
+    old_folder = os.path.join(output_folder, "BackUp")
+    #Проверяем, существует ли уже папка "BackUp". Если нет, создаем ее.
+    if not os.path.exists(old_folder):
+        os.makedirs(old_folder)
+    #Формируем полный путь к существующему файлу, который нужно проверить.
+    existing_file_path = os.path.join(output_folder, file_name)
+    #Проверяем, существует ли файл по указанному пути.
+    if os.path.exists(existing_file_path):
+        #Если файл уже существует, перемещаем его в папку "BackUp".
+        shutil.move(existing_file_path, os.path.join(old_folder, file_name))
+
+
+
+#Получаем текущий экземпляр приложения Revit.
+app = __revit__.Application
+
+
+
+#Функция для экспорта файла Revit в IFC.
+def export_rvt_to_ifc(revit_file_path, output_folder_ifc, options):
+
+    #Получаем путь к папке, в которой находится файл rvt.
+    rvt_directory_for_ifc = os.path.dirname(revit_file_path)
+    #Заменяем часть пути "Rvt" на "IFC".
+    output_folder_ifc = rvt_directory_for_ifc.replace("Rvt", "IFC")
+    #Формирование имени файла IFC.
+    base_file_name = os.path.basename(revit_file_path)
+    file_name_ifc = "{}.ifc".format(os.path.splitext(base_file_name)[0].replace("Rvt", "IFC"))
+    #Получаем абсолютный путь к папке вывода.
+    output_folder_absolute_ifc = os.path.abspath(output_folder_ifc)
+    #Проверка существования файла и перемещение его в папку "old", если он уже существует.
+    move_existing_file(output_folder_absolute_ifc, file_name_ifc)
+    #Преобразование пути к файлу Revit из пользовательского представления в модельный путь.
+    model_path = ModelPathUtils.ConvertUserVisiblePathToModelPath(revit_file_path) 
+    #Открытие документа Revit.
+    doc = open_revit_file(app, model_path)
+    #Проверка, был ли успешно открыт документ Revit.
+    if not doc:
+        return
+    #Начало транзакции для установки безразмерных единиц измерения.
+    with Transaction(doc, "Установка безразмерных единиц измерения") as t:
+        #Начало транзакции.
+        t.Start()
+        #Получение текущих единиц измерения документа.
+        units = doc.GetUnits()
+        #Проход по списку заданных единиц измерения.
+        for unit_type in list_of_unit_types:
+            #Получение параметров формата единиц измерения для указанного типа единиц.
+            unit_type_format_options = units.GetFormatOptions(unit_type)
+            #Установка символа единицы измерения в безразмерный.
+            unit_type_format_options.UnitSymbol = UnitSymbolType.UST_NONE
+            #Установка параметров формата единиц измерения.
+            units.SetFormatOptions(unit_type, unit_type_format_options)
+        #Установка обновленных единиц измерения в документ.
+        doc.SetUnits(units)
+        #Фиксация изменений в транзакции.
+        t.Commit()
+    #Получение элементов, которые могут быть разбиты на части.
+    list_of_invalids = []  #Список элементов, которые не могут быть разбиты на части из-за некорректного моделирования.
+    list_of_elements = []  #Список элементов, которые могут быть разбиты на части.
+    #Список категорий элементов, которые мы собираемся собирать.
+    categories_to_collect = [
+        BuiltInCategory.OST_Floors,    #Категория: Полы
+        BuiltInCategory.OST_Walls,     #Категория: Стены
+        BuiltInCategory.OST_Roofs,     #Категория: Крыши
+        BuiltInCategory.OST_Ceilings   #Категория: Потолки
+    ]
+    #Перебор каждой категории в списке categories_to_collect:
+    for category in categories_to_collect:
+        #Получение всех элементов указанной категории, исключая типы элементов.
+        elements = FilteredElementCollector(doc).OfCategory(category).WhereElementIsNotElementType().ToElements()
+        #Перебор каждого элемента в текущей категории.
+        for element in elements:
+            #Добавление элемента в список list_of_elements.
+            list_of_elements.append(element)
+    list_for_creating_parts = []  #Список элементов, которые подлежат разбиению на части из-за многослойной структуры.
+    #Перебор каждого элемента в списке list_of_elements.
+    for element in list_of_elements:
+        #Получение списка идентификаторов материалов элемента.
+        materials_of_element = element.GetMaterialIds(False)
+        #Проверка, является ли элемент многослойным.
+        if len(materials_of_element) > 1:
+            #Проверка, не имеет ли элемент уже связанных частей.
+            if not PartUtils.HasAssociatedParts(doc, element.Id):
+                #Проверка, подходит ли элемент для создания частей.
+                if PartUtils.AreElementsValidForCreateParts(doc, List[ElementId]([element.Id])):
+                    #Добавление идентификатора элемента в список list_for_creating_parts.
+                    list_for_creating_parts.append(element.Id)
+                else:
+                    #Добавление идентификатора элемента в список некорректных элементов list_of_list_of_invalids.
+                    list_of_invalids.append(str(element.Id))
+    #Начало транзакции "Разбиение многослойного элемента на части".
+    with Transaction(doc, 'Разбиение многослойного элемента на части') as t:
+        t.Start()
+        #Создание частей для элементов из списка list_for_creating_parts.
+        PartUtils.CreateParts(doc, List[ElementId](list_for_creating_parts))
+        #Перегенерация документа.
+        doc.Regenerate()
+        #Фиксация изменений в транзакции.
+        t.Commit()
+    #Начало транзакции "Запись UID типоразмера родителя в параметр "NM_Elem_TypeUID" части".
+    with Transaction(doc, 'Запись UID типоразмера родителя в параметр "NM_Elem_TypeUID" части') as t:
+        t.Start()
+        #Получение всех частей в документе.
+        parts = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Parts).WhereElementIsNotElementType().ToElements()
+        #Перебор каждой части в списке parts.
+        for part in parts:
+            #Перебор каждого идентификатора родительского элемента части.
+            for source_id in part.GetSourceElementIds():
+                #Получение объекта родительского элемента по его идентификатору.
+                parent_element = doc.GetElement(source_id.HostElementId)
+                #Проверка, принадлежит ли категория родителя "Части".
+                if parent_element.Category.Name == "Части":
+                    #Пока родительский элемент является частью, продолжаем искать его родителя.
+                    while parent_element.Category.Name == "Части":
+                        #Получение нового идентификатора родительского элемента.
+                        new_parent_id = parent_element.GetSourceElementIds()
+                        #Перебор каждого нового идентификатора родительского элемента.
+                        for source_id_parent in new_parent_id:
+                            #Получение объекта родительского элемента по его идентификатору.
+                            parent_element = doc.GetElement(source_id_parent.HostElementId)
+                else:
+                    #Получение идентификатора типа родительского элемента.
+                    parent_type_id = parent_element.GetTypeId()
+                    #Получение уникального идентификатора родительского элемента по его типу.
+                    parent_uid = doc.GetElement(parent_type_id).UniqueId
+                    #Получение параметра "NM_Elem_TypeUID" части.
+                    param_type_uid = part.LookupParameter("NM_Elem_TypeUID")
+                    #Установка уникального идентификатора родительского элемента в параметр "NM_Elem_TypeUID" части.
+                    param_type_uid.Set(parent_uid)
+            #Получение списка идентификаторов материалов, используемых в части.
+            id_materials_of_part = part.GetMaterialIds(False)
+            #Перебор каждого идентификатора материала части.f
+            for id_material_of_part in id_materials_of_part:
+                #Получение объекта материала по его идентификатору.
+                material_of_part = doc.GetElement(id_material_of_part)
+                #Получение уникального идентификатора материала.
+                uid_material = material_of_part.UniqueId
+                #Получение параметра "NM_Elem_MaterialTypeUID" части.
+                param_material_type_uid = part.LookupParameter("NM_Elem_MaterialTypeUID")
+                #Установка уникального идентификатора материала в параметр "NM_Elem_MaterialTypeUID" части.
+                param_material_type_uid.Set(uid_material)
+        #Фиксация изменений в транзакции.
+        t.Commit()
+    #Получение всех видов "Navisworks" в документе.
+    navisworks_views = FilteredElementCollector(doc).OfClass(View3D).ToElements()
+    navisworks_view = None
+    #Поиск подходящего вида "Navisworks".
+    for view in navisworks_views:
+        if "Navisworks" in view.Name:
+            navisworks_view = view
+            break
+    #Если не найден вид "Navisworks", выводим сообщение и закрываем документ.
+    if navisworks_view is None:
+        print("Не найден вид Navisworks в файле {}".format(revit_file_path))
+        doc.Close(False)
+        return
+    #Установка найденного вида для экспорта.
+    options.FilterViewId = navisworks_view.Id
+    #Формирование имени выходного файла IFC.
+    file_name_ifc = "{}.ifc".format(os.path.splitext(os.path.basename(revit_file_path))[0])
+    output_path_ifc = os.path.join(output_folder_ifc, file_name_ifc)
+    #Экспорт файла в формате IFC.
+    with Transaction(doc, "Экспорт файла {}".format(file_name_ifc)) as t:
+        t.Start()
+        doc.Export(output_folder_ifc, file_name_ifc, options)
+        t.Commit()
+    #Сохранение и закрытие документа.
+    doc.Close(True)
+    #Вывод имени экспортированного файла.
+    print("Экспортирован файл: {}".format(output_path_ifc))
+    #Возврат имени экспортированного файла и списка некорректных элементов.
+    return file_name_ifc, list_of_invalids
+
+
+
+#Определяем путь к папке логов.
+output_folder_ifc = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(revit_files_paths[1]))), "IFC")
+log_folder = os.path.join(output_folder_ifc, "Log")
+# Проверяем, существует ли уже папка логов. Если нет, создаем ее.
+if not os.path.exists(log_folder):
+    os.makedirs(log_folder)
+#Создание пустого списка для записей в логе.
+log_entries = []
+#Для каждого файла Revit из списка путей к файлам, начиная со второго (индекс 1), выполняем экспорт в IFC и формирование лога.
+for revit_file_path in revit_files_paths[1:]:
+    #Выполнение экспорта файла Revit в IFC и получение имени экспортированного файла и списка некорректных элементов.
+    file_name_ifc, list_of_invalids = export_rvt_to_ifc(revit_file_path, output_folder_ifc, options)
+    #Добавление записи в лог: полный путь экспортированного файла и список некорректных элементов
+    full_file_path = os.path.join(output_folder_ifc, file_name_ifc)
+    log_entries.append((full_file_path, list_of_invalids))
+#Получаем текущую дату и время.
+current_datetime = datetime.datetime.now()
+#Форматируем дату и время как строку.
+formatted_datetime = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
+#Строим имя файла лога с отформатированной датой и временем.
+log_file_name_ifc = "export_log_{}.txt".format(formatted_datetime)
+#Создаем полный путь к файлу лога.
+log_file_path = os.path.join(log_folder, log_file_name_ifc)
+#Открываем файл лога для записи
+log_file = open(log_file_path, "w")
+#Записываем каждую запись в лог.
+for revit_file_path, list_of_invalids in log_entries:
+    #Записываем путь к файлу Revit.
+    log_file.write(u"Файл: {}\n".format(revit_file_path).encode('utf-8'))
+    #Если есть некорректные элементы, записываем их.
+    if list_of_invalids:
+        invalid_elements = u", ".join(str(element) for element in list_of_invalids)
+        log_file.write(u"Список id некорректно замоделированных элементов многослойных конструкций: {}\n".format(invalid_elements).encode('utf-8'))
+    else:
+        log_file.write(u"Нет некорректно замоделированных элементов многослойных конструкций\n".encode('utf-8'))
+    #Добавляем пустую строку для разделения записей.
+    log_file.write(u"\n".encode('utf-8'))
+#Закрываем файл лога.
+log_file.close()
+print("Log created. Path: {}".format(log_file_path))
+
+
+
+#Проверяем, существует ли выходная директория.
+output_folder_nwc = output_folder_nwc = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(revit_files_paths[1]))), "NWC") 
+if not os.path.exists(output_folder_nwc):
+    #Если выходная директория не существует, cоздаем выходную директорию.
+    os.makedirs(output_folder_nwc)
+
+
+
+#Функция экспорта RVT to NWC.
+def export_rvt_to_nwc(revit_file_path, output_folder_nwc, navisworks_view_name="Navisworks"): 
+    #Получаем путь к папке, в которой находится файл rvt.
+    rvt_directory_for_nwc = os.path.dirname(revit_file_path)
+    #Заменяем часть пути "Rvt" на "04_ExportToIFC".
+    output_folder_nwc = rvt_directory_for_nwc.replace("Rvt", "NWC")
+
+    base_file_name = os.path.basename(revit_file_path)
+    file_name_nwc = "{}.nwc".format(os.path.splitext(base_file_name)[0].replace("Rvt", "NWC"))
+    #Получаем абсолютный путь к папке вывода.
+    output_folder_absolute_nwc = os.path.abspath(output_folder_nwc)
+    #Проверка существования файла и перемещение его в папку "old", если он уже существует.
+    move_existing_file(output_folder_absolute_nwc, file_name_nwc)
+    #.Формирование полного пути к файлу IFC.
+    output_path_nwc = os.path.join(output_folder_absolute_nwc, file_name_nwc)
+    #Преобразование пути к файлу Revit из пользовательского представления в модельный путь.
+    model_path = ModelPathUtils.ConvertUserVisiblePathToModelPath(revit_file_path) 
+    #Открытие документа Revit.
+    doc = open_revit_file(app, model_path) 
+    #Проверка, был ли успешно открыт документ Revit.
+    if not doc: 
+        print("Не удалось открыть документ: {}".format(revit_file_path)) 
+        return 
+    #Получаем все 3D виды из документа Revit с помощью фильтрации элементов.
+    navisworks_views = FilteredElementCollector(doc).OfClass(View3D).ToElements()
+    #Инициализируем переменную для хранения нужного 3D вида как None.
+    navisworks_view = None
+    #Поиск подходящего вида "Navisworks". 
+    for view in navisworks_views:
+        #Если имя вида содержит заданное имя navisworks_view_name.
+        if navisworks_view_name in view.Name:
+            #Присваиваем найденный вид переменной navisworks_view.
+            navisworks_view = view
+            #Прерываем цикл, так как нужный вид найден.
+            break
+    #Если не найден вид "Navisworks", выводим сообщение и закрываем документ. 
+    if navisworks_view is None: 
+        print("Не найден вид Navisworks в файле {}".format(revit_file_path)) 
+        #Закрываем документ ревит без сохранения изменений в нем.
+        doc.Close(False) 
+        return 
+    #Формирование имени выходного файла NWC.
+    file_name_nwc = os.path.splitext(os.path.basename(revit_file_path))[0]
+    #Формируем выходной путь, объединяя выходную директорию и имя файла.
+    output_path_nwc = os.path.join(output_folder_nwc, file_name_nwc)
+
+    #Настройки экспорта в Navisworks.
+    nwc_options = NavisworksExportOptions() 
+    nwc_options.ExportElementIds = True                             # Конвертировать идентификаторы объектов. 
+    nwc_options.ConvertElementProperties = True                     # Конвертировать параметры объектов. 
+    nwc_options.Coordinates = NavisworksCoordinates.Shared          # Координаты. Shared по умолчанию. 
+    nwc_options.FacetingFactor = 4.0                                # Коэффициент фасетизации. 
+    nwc_options.ExportUrls = False                                  # Пербразовать URL-адреса. 
+    nwc_options.ConvertLights = False                               # Пербразовать источники света. 
+    nwc_options.ExportRoomAsAttribute = True                        # Пербразовать помещение как атрибут. 
+    nwc_options.Parameters = NavisworksParameters.All               # Преобразовать свойства объектов. 
+    nwc_options.ConvertLinkedCADFormats = False                     # Пербразовать связанные CAD файлы. 
+    nwc_options.ExportLinks = False                                 # Пербразовать связанные файлы. 
+    nwc_options.ExportParts = True                                  # Преобразовать элементы конструкции. 
+    nwc_options.FindMissingMaterials = True                         # Проверять и находить отсуствующие материалы. 
+    nwc_options.DivideFileIntoLevels = True                         # Разделить файл на уровни. 
+    nwc_options.ViewId = navisworks_view.Id                         # Экспорт. 
+    nwc_options.ExportRoomGeometry = True                           # Экспортировать геометрию помещения. 
+    nwc_options.ExportScope = NavisworksExportScope.View 
+    #Экспорт файла в NWC.
+    doc.Export(output_folder_nwc, file_name_nwc, nwc_options) 
+    #Сохранение и закрытие документа.
+    doc.Close(True) 
+    #Вывод успешного завершения экспорта.
+    print("Экспортирован файл: {}".format(output_path_nwc)) 
+
+
+
+#Экспорт каждого файла Revit в NWC.
+for revit_file_path in revit_files_paths[1:]:
+    export_rvt_to_nwc(revit_file_path, output_folder_nwc, navisworks_view_name="Navisworks")
+
+
+print("Batch Export Rvt to IFC/NWC is finished. @DigitalTwin_bdv")
+
