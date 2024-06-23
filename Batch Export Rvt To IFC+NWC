@@ -25,7 +25,7 @@ import shutil
 
 
 #Путь к CSV файлу.
-csv_file_path = r""
+csv_file_path = r"C:\Users\dbelyaeva\OneDrive - ООО Интеллектуальный строительный инжиниринг\Рабочий стол\bdv\YouTube\Batch Export\PathsForRvtFiles.csv"
 
 
 
@@ -113,7 +113,7 @@ list_of_unit_types = [
     UnitType.UT_HVAC_Temperature,                           #"Раздел 'Раздел 'ОВК'", Температура.
     UnitType.UT_HVAC_Velocity,                              #"Раздел 'Раздел 'ОВК'", Скорость.
     UnitType.UT_HVAC_Airflow,                               #"Раздел 'Раздел 'ОВК'", Воздушный поток.
-    # UnitType.UT_HVAC_DuctSize,                              #"Раздел 'Раздел 'ОВК'", Размер воздуховода.
+    UnitType.UT_HVAC_DuctSize,                              #"Раздел 'Раздел 'ОВК'", Размер воздуховода.
     UnitType.UT_HVAC_CrossSection,                          #"Раздел 'Раздел 'ОВК'", Поперечный разрез.
     UnitType.UT_HVAC_HeatGain,                              #"Раздел 'Раздел 'ОВК'", Теплоприток.
     UnitType.UT_HVAC_Roughness,                             #"Раздел 'Раздел 'ОВК'", Шероховатость.
@@ -131,8 +131,8 @@ list_of_unit_types = [
     UnitType.UT_HVAC_Area_Divided_By_Heating_Load,          #"Раздел 'Раздел 'ОВК'", Площадь на единицу отопительной нагрузки.
     UnitType.UT_HVAC_Slope,                                 #"Раздел 'Раздел 'ОВК'", Уклон.
     UnitType.UT_HVAC_Factor,                                #"Раздел 'Раздел 'ОВК'", Коэффициент.
-    # UnitType.UT_HVAC_DuctInsulationThickness,               #"Раздел 'Раздел 'ОВК'", Толщина изоляции воздуховода.
-    # UnitType.UT_HVAC_DuctLiningThickness,                   #"Раздел 'Раздел 'ОВК'", Толщина внутренней изоляции воздуховода.
+    UnitType.UT_HVAC_DuctInsulationThickness,               #"Раздел 'Раздел 'ОВК'", Толщина изоляции воздуховода.
+    UnitType.UT_HVAC_DuctLiningThickness,                   #"Раздел 'Раздел 'ОВК'", Толщина внутренней изоляции воздуховода.
     UnitType.UT_Piping_Density,                             #"Раздел 'Трубопроводы'", Плотность.
     UnitType.UT_Piping_Flow,                                #"Раздел 'Трубопроводы'", Расход.
     UnitType.UT_Piping_Friction,                            #"Раздел 'Трубопроводы'", Трение.
@@ -144,7 +144,7 @@ list_of_unit_types = [
     UnitType.UT_Piping_Roughness,                           #"Раздел 'Трубопроводы'", Шероховатость.
     UnitType.UT_Piping_Volume,                              #"Раздел 'Трубопроводы'", Объем.
     UnitType.UT_Piping_Slope,                               #"Раздел 'Трубопроводы'", Уклон.
-    # UnitType.UT_PipeInsulationThickness,                    #"Раздел 'Трубопроводы'", Толщина изоляции трубы.
+    UnitType.UT_PipeInsulationThickness,                    #"Раздел 'Трубопроводы'", Толщина изоляции трубы.
     UnitType.UT_Pipe_Dimension,                             #"Раздел 'Трубопроводы'", Размер трубы.
     UnitType.UT_PipeMass,                                   #"Раздел 'Трубопроводы'", Масса.
     UnitType.UT_PipeMassPerUnitLength,                      #"Раздел 'Трубопроводы'", Масса на единицу длины.
@@ -421,7 +421,7 @@ def export_rvt_to_ifc(revit_file_path, output_folder_ifc, options):
 
 #Определяем путь к папке логов.
 output_folder_ifc = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(revit_files_paths[1]))), "IFC")
-log_folder = os.path.join(output_folder_ifc, "Log")
+log_folder = os.path.join(output_folder_ifc, "_Log")
 # Проверяем, существует ли уже папка логов. Если нет, создаем ее.
 if not os.path.exists(log_folder):
     os.makedirs(log_folder)
@@ -549,4 +549,3 @@ for revit_file_path in revit_files_paths[1:]:
 
 
 print("Batch Export Rvt to IFC/NWC is finished. @DigitalTwin_bdv")
-
