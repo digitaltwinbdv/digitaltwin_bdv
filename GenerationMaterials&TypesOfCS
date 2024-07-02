@@ -1,0 +1,385 @@
+
+# Импортируем модуль csv для работы с CSV-файлами.
+import csv
+#Импортируем модуль io для работы с вводом-выводом.
+import io
+#Импортируем модуль os для работы с операционной системой.
+import os
+#Импортируем модуль sys для доступа к системным функциям и параметрам.
+import sys
+#Импортируем модуль clr для работы с .NET Common Language Runtime.
+import clr
+#Импортируем пространство имен System.
+import System
+#Импортируем пространство имен Autodesk.
+import Autodesk
+#Добавляем ссылку на сборку RevitAPI.
+clr.AddReference('RevitAPI')
+#Добавляем ссылку на сборку RevitAPIUI.
+clr.AddReference("RevitAPIUI")
+#Импортируем все классы из пространства имен Autodesk.Revit.DB.
+from Autodesk.Revit.DB import *
+#Импортируем все классы из пространства имен Autodesk.Revit.UI.
+from Autodesk.Revit.UI import *
+#Добавляем ссылку на сборку RevitNodes.
+clr.AddReference('RevitNodes')
+#Импортируем модуль Revit.
+import Revit
+#Импортируем расширения для элементов Revit.
+clr.ImportExtensions(Revit.Elements)
+#Добавляем ссылку на сборку RevitServices.
+clr.AddReference('RevitServices')
+#Импортируем модуль RevitServices.
+import RevitServices
+#Импортируем класс DocumentManager из модуля RevitServices.Persistence.
+from RevitServices.Persistence import DocumentManager
+#Импортируем класс TransactionManager из модуля RevitServices.Transactions.
+from RevitServices.Transactions import TransactionManager
+
+
+
+#Функция для поиска типоразмера по имени.
+def find_type_by_name(types, type_name):
+    for t in types:
+        if t.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString() == type_name:
+            return t
+    return None
+
+
+
+#Путь к файлу CSV.
+csv_file_path = r""
+#Имя столбца, используемого для создания имен материалов.
+column_name = ""
+
+
+
+#Путь к файлу Revit.
+rvt_file_path = r""
+#Получаем объект приложения Revit.
+app = __revit__.Application
+#Открываем указанный файл Revit и получаем объект документа.
+doc = app.OpenDocumentFile(rvt_file_path)
+#Получаем активный пользовательский интерфейс документа.
+uidoc = __revit__.ActiveUIDocument
+
+
+
+#Словарь, который будет содержать параметры для каждого материала.
+materials_parameters = {}
+#Чтение CSV-файла и получение параметров для каждого материала.
+with io.open(csv_file_path, mode='r', encoding='utf-8', newline='') as csvfile:
+    reader = csv.DictReader(csvfile, delimiter=';')
+    #Итерируемся по каждой строке в CSV-файле.
+    for row in reader:
+        #Получаем значение из столбца с именем, указанным в переменной column_name.
+        material_name = row[column_name]
+        #Если название материала еще не присутствует в словаре, добавляем его как ключ с пустым словарем в качестве значения.
+        if material_name not in materials_parameters:
+            #Добавляем его как ключ с пустым словарем в качестве значения.
+            materials_parameters[material_name] = {}
+        #Итерируемся по каждой паре ключ-значение в словаре строки.
+        for key, value in row.items():
+            #Если ключ уже присутствует для данного материала, добавляем значение в существующий список.
+            if key in materials_parameters[material_name]:
+                materials_parameters[material_name][key].append(value)
+            #Если ключ отсутствует, создаем новую пару ключ-значение, где значение представлено в виде списка.
+            else:
+                materials_parameters[material_name][key] = [value]
+
+
+
+#Создание материалов в отдельной транзакции 'Create materials'. Материал создается только при условии, что его еще нет в библиотеке материалов.
+with DB.Transaction(doc, 'Create materials') as t:
+    #Начало транзакции.
+    t.Start()
+    #Итерируемся по каждому имени материала в словаре materials_parameters.
+    for material_name in materials_parameters:
+        #Получаем все существующие материалы в проекте.
+        existing_materials = FilteredElementCollector(doc).OfClass(Material).ToElements()
+        #Инциализируем переменную material как None (пустое значение).
+        material = None
+        #Ищем материал с заданным именем в списке существующих материалов.
+        for mat in existing_materials:
+            if mat.Name == material_name:
+                #Если найден материал с заданным именем, присваиваем его переменной material и выходим из цикла.
+                material = mat
+                break
+        #Если материал не найден, создаем его.
+        if not material:
+            material = Material.Create(doc, "i_" + material_name)
+    #Завершение транзакции.
+    t.Commit()
+
+
+
+#Для материалов с префиксом 'i_' осуществляется перенос значений параметров из csv файла в транзакции 'Set material parameters'.
+for material_name in materials_parameters:
+    #Получаем все существующие материалы в проекте.
+    existing_materials = FilteredElementCollector(doc).OfClass(Material).ToElements()
+    #Инициализируем переменную material как None (пустое значение).
+    material = None
+    #Ищем материал с заданным именем, предварительно добавляя префикс "i_".
+    for mat in existing_materials:
+        if mat.Name == "i_" + material_name:
+            #Если найден материал с заданным именем и префиксом, присваиваем его переменной material и выходим из цикла.
+            material = mat
+            break
+
+
+
+#Получение всех AppearanceAsset для материалов из библиотеки материалов проекта.
+appearance_assets = list(FilteredElementCollector(doc).OfClass(AppearanceAssetElement).ToElements())
+#Создание словаря для хранения AppearanceAsset, назначаемых для каждого материала, созданного в транзакции 'Create materials'. Ключи и значения не должны повторяться.
+assets_to_assign = {
+    "ADSK_Бетон": {"prefix": "i_", "keyword": "бетон"},
+    "ADSK_Древесина_Доска половая светлая": {"prefix": "i_", "keyword": "доск"},
+    "ADSK_Изоляция_Воздух": {"prefix": "i_", "keyword": "возд"},
+    "Бетон - Керамзитобетон": {"prefix": "i_", "keyword": "керамзитобетон"},
+    "Металл - Медь": {"prefix": "i_", "keyword": "мед"},
+    "ADSK_Металл_Сталь нержавеющая": {"prefix": "i_", "keyword": "стал"},
+    "ADSK_Кровля_Битумная_Лист_волнистый коричневый": {"prefix": "i_", "keyword": "битум"},
+    "ADSK_Грунт_Песок крупный": {"prefix": "i_", "keyword": "песок"},
+    "ADSK_Изоляция_Мембрана_Пленка полиэтиленовая": {"prefix": "i_", "keyword": "полиэт"},
+    "ADSK_Изоляция_Минеральная_Вата минеральная": {"prefix": "i_", "keyword": "минер"},
+    "ADSK_Изоляция_Полимерная_Пенополистирол": {"prefix": "i_", "keyword": "пенопол"},
+    "ADSK_Плитка_Керамическая бежевая_300х300мм": {"prefix": "i_", "keyword": "плитк"},
+    "Металл - Алюминий": {"prefix": "i_", "keyword": "метал"},
+    "Стяжка - Цементно-песчаная": {"prefix": "i_", "keyword": "цемент"},
+    "ADSK_Краска_Темно-серая": {"prefix": "i_", "keyword": "грунтовк"},
+    "ADSK_Краска_Светло-серая": {"prefix": "i_", "keyword": "кле"},
+    "ADSK_Текстиль_Ковролин бежевый": {"prefix": "i_", "keyword": "линоле"},
+    "ADSK_Полимеры_Поликарбонат прозрачный": {"prefix": "i_", "keyword": "эпокс"},
+    "Пластмассы - Пластик - Белый": {"prefix": "i_", "keyword": "полимер"},
+    "Пластмассы - Пластик - Белый": {"prefix": "i_", "keyword": "полип"},
+    "ADSK_Грунт_Керамзитовый гравий": {"prefix": "i_", "keyword": "грав"},
+    "ADSK_Металл_Настил рифленый": {"prefix": "i_", "keyword": "настил"},
+    "ADSK_Древесина_Брус": {"prefix": "i_", "keyword": "бру"},
+    "ADSK_Камень_Гранит серый": {"prefix": "i_", "keyword": "каме"},
+    "ADSK_Кладка_Кирпич_Рядовой_Керамический одинарный": {"prefix": "i_", "keyword": "полнот"},
+    "ADSK_Грунт_Почва": {"prefix": "i_", "keyword": "грун"},
+    "ADSK_Краска_Слоновая кость": {"prefix": "i_", "keyword": "краск"},
+    "ADSK_Металл_Чугун": {"prefix": "i_", "keyword": "чуг"},
+    "Металл - Алюминий": {"prefix": "i_", "keyword": "метал"},
+    "Бронза": {"prefix": "i_", "keyword": "ронз"},
+    "ADSK_Стекло_Прозрачное бесцветное": {"prefix": "i_", "keyword": "стекл"},
+    "ADSK_Металл_Латунь": {"prefix": "i_", "keyword": "латун"},
+    "ADSK_Изоляция_Мембрана_Пленка полиэтиленовая": {"prefix": "i_", "keyword": "полиэт"},
+    "ADSK_Керамика_Фаянс белый": {"prefix": "i_", "keyword": "аянс"},
+    "Свинец": {"prefix": "i_", "keyword": "свин"},
+    "ADSK_Полимеры_Резина черная": {"prefix": "i_", "keyword": "рези"},
+    "ADSK_Полимеры_ Поливинилхлорид_(ПВХ) белый": {"prefix": "i_", "keyword": "поливин"},
+    "Гипсокартон": {"prefix": "i_", "keyword": "ипс"},
+    "ADSK_Древесина_Плита древесно-стружечная": {"prefix": "i_", "keyword": "ДСП"},
+    "ADSK_Древесина_Сосна": {"prefix": "i_", "keyword": "древ"},
+
+}
+#Проходим по каждому AppearanceAsset, который нужно назначить.
+for asset_name, asset_info in assets_to_assign.items():
+    #Находим нужный AppearanceAsset по имени.
+    asset = next((a for a in appearance_assets if a.Name == asset_name), None)
+    if not asset:
+        #Если не найден нужный AppearanceAsset, выводим ошибку и переходим к следующему.
+        print("Asset '{0}' not found.".format(asset_name))
+        continue
+    #Получаем все список всех материалов проекта.
+    i_materials = list(FilteredElementCollector(doc).OfClass(Material).WhereElementIsNotElementType().ToElements())
+    #Получаем все материалы, которым нужно назначить данный AppearanceAsset.
+    i_materials = [mat for mat in i_materials if mat.Name.startswith(asset_info["prefix"]) and asset_info["keyword"] in mat.Name.lower()]
+    #Выводим список найденных материалов.
+    for mat in i_materials:
+        print(mat.Name)
+    #Получаем все список всех материалов проекта.
+    all_materials = list(FilteredElementCollector(doc).OfClass(Material).WhereElementIsNotElementType().ToElements())
+    #Находим материал с этим AppearanceAsset для получения его CutBackgroundPatternColor
+    source_material = next((m for m in all_materials if m.AppearanceAssetId == asset.Id), None)
+    if not source_material:
+        # Если не найден материал с этим AppearanceAsset, выводим ошибку и переходим к следующему.
+        print("Source material for asset '{0}' not found.".format(asset_name))
+        continue
+    #Назначаем AppearanceAsset для каждого материала с префиксом 'i_' в транзакции 'Assign appearance assets'.
+    with Transaction(doc, 'Assign appearance assets') as t:
+        #Начало транзакции.
+        t.Start()
+        for mat in i_materials:
+            #Присваиваем свойства имеющегося материала созданному материалу.
+            mat.AppearanceAssetId = asset.Id
+            mat.Color = source_material.Color
+            mat.CutBackgroundPatternColor = source_material.CutBackgroundPatternColor
+            mat.CutBackgroundPatternId = source_material.CutBackgroundPatternId
+            mat.CutForegroundPatternColor = source_material.CutForegroundPatternColor
+            mat.CutForegroundPatternId = source_material.CutForegroundPatternId
+            mat.MaterialCategory = source_material.MaterialCategory
+            mat.MaterialClass = source_material.MaterialClass
+            mat.Shininess = source_material.Shininess
+            mat.Smoothness = source_material.Smoothness
+            mat.StructuralAssetId = source_material.StructuralAssetId
+            mat.SurfaceBackgroundPatternColor = source_material.SurfaceBackgroundPatternColor
+            mat.SurfaceBackgroundPatternId = source_material.SurfaceBackgroundPatternId 
+            mat.SurfaceForegroundPatternColor = source_material.SurfaceForegroundPatternColor
+            mat.SurfaceForegroundPatternId = source_material.SurfaceForegroundPatternId
+            mat.ThermalAssetId = source_material.ThermalAssetId
+            mat.Transparency = source_material.Transparency
+            mat.UseRenderAppearanceForShading = source_material.UseRenderAppearanceForShading
+        #Завершение транзакции.
+        t.Commit()
+
+
+
+#В консоли IronPython получаем активный документ проекта Revit.
+doc = __revit__.ActiveUIDocument.Document
+#Получаем единицы измерения проекта.
+UIunit = Document.GetUnits(doc).GetFormatOptions(UnitType.UT_Length).DisplayUnits
+#Получаем все типоразмеры стен, полов, крыш и потолков.
+list_of_types = []
+#Создаем список необходимых категорий.
+categories_to_collect = [
+    BuiltInCategory.OST_Floors,                   #Категория: Полы
+    BuiltInCategory.OST_Walls,                    #Категория: Стены
+    BuiltInCategory.OST_Roofs,                    #Категория: Крыши
+    BuiltInCategory.OST_Ceilings                  #Категория: Потолки
+]
+#Для каждой категории в списке categories_to_collect:
+for category in categories_to_collect:
+    #Получаем все элементы указанной категории, исключая типы элементов.
+    types = FilteredElementCollector(doc).OfCategory(category).WhereElementIsElementType().ToElements()
+    #Для каждого элемента в текущей категории.
+    for type in types:
+        #Добавляем элемент в список list_of_elements.
+        list_of_types.append(type)
+
+
+
+# Открываем файл csv.
+with io.open(csv_file_path, mode='r', encoding='utf-8', newline='') as csvfile:
+    # Создаем словарь на основе csv файла.
+    reader = csv.DictReader(csvfile, delimiter=';')
+    # Проверка заголовков
+    headers = reader.fieldnames
+    # Создаем необходимые списки для данных.
+    f1_links = []
+    materials = []
+    widths = []
+    functions = []
+    materials_in_project = []
+    category_of_elements = []
+    #Итерируемся по файлу csv.
+    for row in reader:
+        try:
+            #Получаем данные из необходимых нам столбцов файла csv.
+            f1_link = row["Type name"]
+            material = row["Material name"]
+            category_of_element = row["RVTCategory"] #Оставить такое наименование столбца, так csv видит RVTCategory
+            width = row["LayerThickness"].replace(",", ".")
+            function = row["LayerFunction"]
+            #Добавляем значения столбцов в подготовленные списки.
+            f1_links.append(f1_link)
+            materials.append(material)
+            widths.append(width)
+            functions.append(function)
+            category_of_elements.append(category_of_element)
+        except KeyError as e:
+            print("Missing key: {} in row: {}".format(e, row))
+        #Ищем материал в проекте с таким же наименованием, как в csv + префикс "i_" и добавляем его в список materials_in_project.
+        for mat in existing_materials:
+            if mat.Name == "i_" + material:
+                #Если найден материал с заданным именем и префиксом, добавляем его в список materials_in_project и выходим из цикла.
+                materials_in_project.append(mat)
+                break
+    #Создаем zip на основании четырех списков.
+    zipped_data = zip(f1_links, materials_in_project, widths, functions, category_of_elements)
+    print(zipped_data)
+    #Создаем пустой словарь для группированных данных.
+    grouped_data = {}
+    #Итерируемся по каждому элементу в zipped_data.
+    for item in zipped_data:
+        #Получаем ключ из первого элемента кортежа.
+        key = item[0]
+        if key == '':
+            #Пропускаем пустые ключи.
+            continue
+        #Если ключ уже присутствует в словаре grouped_data, добавляем значения в соответствующий список.
+        if key in grouped_data:
+            grouped_data[key].append(item[1:])
+        #Если ключ отсутствует, создаем новую запись в словаре с ключом и списком значений.
+        else:
+            grouped_data[key] = [item[1:]]
+    #Удаляем пустые ключи и соотвествующие им пустые значения из сгруппированных данных.
+    grouped_data = {k: v for k, v in grouped_data.items() if k != ''}
+    print(grouped_data)
+
+
+
+#Ищем типоразмер многослойной конструкции, копированием которой будут создаваться все последующие многослойные конструкции.
+#Инициализируем типоразмеры-шаблоны.
+type_name_wall = "i_Template_Wall"
+type_name_floor = "i_Template_Floor"
+type_name_ceiling = "i_Template_Ceiling"
+type_name_roof = "i_Template_Roof"
+# Поиск шаблонов типоразмеров.
+template_wall = find_type_by_name(list_of_types, type_name_wall)
+template_floor = find_type_by_name(list_of_types, type_name_floor)
+template_ceiling = find_type_by_name(list_of_types, type_name_ceiling)
+template_roof = find_type_by_name(list_of_types, type_name_roof)
+print(template_wall)
+#Проверка на наличие всех необходимых шаблонов.
+if not template_wall or not template_floor or not template_ceiling or not template_roof:
+    TaskDialog.Show("Ошибка", "Не все шаблоны типоразмеров найдены.")
+    sys.exit()
+else:
+    #Получаем уникальные непустые значения столбца f1_link.
+    unique_f1_links = set(f1_links)
+    for f1_link in unique_f1_links:
+        category = None
+        for item in grouped_data.get(f1_link, []):
+            category = item[3]  # RVTCategory
+        if not category:
+            continue
+        if str(category) == "OST_Roofs":
+            template = template_roof
+        elif str(category) == "OST_Floors":
+            template = template_floor
+        elif str(category) == "OST_Walls":
+            template = template_wall
+        elif str(category) == "OST_Ceilings":
+            template = template_ceiling
+        else:
+            continue
+        with Transaction(doc, 'Creating CompoundStructre') as t:
+            t.Start()
+            #Получаем существующий тип многослойной конструкции по идентификатору.
+            existing_type = doc.GetElement(template.Id)
+            #В имена типоразмеров поданы уникальные значения столбца f1_link.
+            new_type_name = str(f1_link)
+            #Создаем новый типоразмер на основе существующего с указанным именем.
+            new_type = template.Duplicate(new_type_name)
+            #Создаем пустой список для хранения слоев многослойной конструкции.
+            layers = []
+            #Итерируемся по данным из grouped_data с ключом f1_link.
+            for material_in_project, width, function, _ in grouped_data.get(f1_link, []):
+                #Проверяем тип значения function.
+                if isinstance(function, Autodesk.Revit.DB.MaterialFunctionAssignment):
+                    #Если значение function уже является объектом MaterialFunctionAssignment, сохраняем его в переменную layerFunction.
+                    layerFunction=function
+                else:
+                    #Если значение function является строкой, выполняем парсинг значения и преобразование в перечисление MaterialFunctionAssignment.
+                    layerFunction=System.Enum.Parse(Autodesk.Revit.DB.MaterialFunctionAssignment, function)
+                    #Создаем слой многослойной конструкции с указанными параметрами и добавляем его в список layers.
+                layers.append(CompoundStructureLayer(UnitUtils.ConvertToInternalUnits(float(width) * 1000,UIunit), layerFunction, material_in_project.Id))
+            #Создаем многослойную конструкцию на основе списка слоев.
+            compound = CompoundStructure.CreateSimpleCompoundStructure(layers)
+            if str(template) == "i_Template_Wall":
+                #Устанавливаем тип закрытия конструкции.
+                compound.EndCap = EndCapCondition.None
+            else:
+                #Устанавливаем тип закрытия конструкции.
+                compound.EndCap = EndCapCondition.NoEndCap
+            #Применяем созданную многослойную конструкцию к новому типоразмеру.
+            new_type.SetCompoundStructure(compound)
+            t.Commit()
+
+
+
+
+print("The process of generating materials and types of compound structures is completed. @DigitalTwin_bdv")
+
