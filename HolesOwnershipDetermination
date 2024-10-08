@@ -1,0 +1,110 @@
+import clr
+clr.AddReference("RevitAPI")
+clr.AddReference("RevitServices")
+from Autodesk.Revit.DB import *
+import RevitServices
+from RevitServices.Persistence import DocumentManager
+from RevitServices.Transactions import TransactionManager
+
+def get_revit_version():
+    #Получаем текущий документ.
+    doc = DocumentManager.Instance.CurrentDBDocument  
+    #Получаем экземпляр приложения Revit.
+    app = doc.Application  
+    #Получаем версию Revit.
+    version_name = app.VersionName  # Получаем строку с названием версии Revit через свойство VersionName объекта Application.
+    
+    #Проверка версии Revit.
+    if "2020" in version_name:
+        return "Версия Revit: {}. Код выполняется.".format(version_name)
+    else:
+        return "Версия Revit: {}. Обратитесь за адаптацией кода к DigitalTwin_BDV.".format(version_name)
+
+#Получаем результат функции.
+check = get_revit_version()
+
+
+
+#Входные параметры для различных имен параметров.
+parameter_for_material_name = IN[0]
+parameter_for_host_type_name = IN[1]
+parameter_for_host_uid = IN[2]
+parameter_for_host_id = IN[3]
+
+#Категории элементов, для которых будет определяться основа.
+categories_for_determination = [
+    BuiltInCategory.OST_Walls,                                 #Категория "Стены".
+    BuiltInCategory.OST_Floors,                                #Категория "Перекрытия".
+    BuiltInCategory.OST_Columns,                               #Категория "Колонна".
+    BuiltInCategory.OST_Roofs,                                 #Категория "Крыши".
+    BuiltInCategory.OST_Ceilings,                              #Категория "Потолки".
+    BuiltInCategory.OST_StructuralFraming,                     #Категория "Каркас несущий".
+    BuiltInCategory.OST_StructuralFoundation,                  #Категория "Фундаменты".
+]
+
+#Категории элементов, которые являются отверстиями.
+categories_for_holes = [
+    BuiltInCategory.OST_Doors,
+    BuiltInCategory.OST_Windows,
+    BuiltInCategory.OST_GenericModel,
+]
+
+#Получение текущего документа Revit через DocumentManager (для Dynamo).
+doc = DocumentManager.Instance.CurrentDBDocument
+
+#Список для хранения найденных отверстий.
+elements_of_holes = []
+
+#Поиск всех элементов в категориях отверстий.
+for category in categories_for_holes:
+    elements = FilteredElementCollector(doc).OfCategory(category).WhereElementIsNotElementType().ToElements()
+    for element in elements:
+        #Получение материалов элемента.
+        element_materials = element.GetMaterialIds(False)
+        for material in element_materials:
+            #Получение объекта материала и его имени.
+            object_of_material = doc.GetElement(material)
+            name_of_element_material = object_of_material.Name
+            #Если материал имеет имя "i_Демонтаж", добавляем элемент в список отверстий.
+            if name_of_element_material == "i_Демонтаж":
+                elements_of_holes.append(element)
+
+#Обработка каждого найденного отверстия.
+with Transaction(doc, 'Обновление параметров отверстий') as t:
+    t.Start()
+    for element_of_hole in elements_of_holes:
+        #Определение основы, в которой находится отверстие.
+        host_of_hole = element_of_hole.Host
+        if host_of_hole:
+            #Получение объекта основы.
+            object_of_host = doc.GetElement(host_of_hole.Id)
+            #Получение списка id материалов основы.
+            ids_materials_of_host = object_of_host.GetMaterialIds(False)
+            #Если у основы более одного материала:
+            if len(ids_materials_of_host) > 1:
+                names_of_materials = [doc.GetElement(material_id).Name for material_id in ids_materials_of_host]
+                #Объединение имен материалов в строку.
+                names_of_materials_str = ", ".join(names_of_materials)
+                #Запись имен материалов основы в параметр отверстия.
+                element_of_hole.LookupParameter(str(parameter_for_material_name)).Set(names_of_materials_str)
+            else:
+                #Если у основы только один материал:
+                name_of_material = doc.GetElement(ids_materials_of_host[0]).Name
+                element_of_hole.LookupParameter(str(parameter_for_material_name)).Set(str(name_of_material))
+            
+            #Запись имени типоразмера основы в параметр отверстия.
+            name_of_type_of_host = object_of_host.Name
+            element_of_hole.LookupParameter(str(parameter_for_host_type_name)).Set(name_of_type_of_host)
+            
+            #Получение uid основы и запись в параметр отверстия.
+            uid_of_host = object_of_host.UniqueId
+            element_of_hole.LookupParameter(str(parameter_for_host_uid)).Set(uid_of_host)
+            
+            #Получение id основы и запись в параметр отверстия.
+            id_of_host = object_of_host.Id.IntegerValue
+            element_of_hole.LookupParameter(str(parameter_for_host_id)).Set(str(id_of_host))
+    t.Commit()
+
+
+
+OUT = check, "Task is completed. @DigitalTwin_bdv"
